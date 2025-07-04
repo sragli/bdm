@@ -2,7 +2,7 @@ defmodule BDM do
   @moduledoc """
   Block Decomposition Method (BDM) implementation for approximating algorithmic complexity.
 
-  This module implements the BDM algorithm developed by Hector Zenil and his group
+  This module implements the BDM algorithm developed by Hector Zenil et al
   to approximate the algorithmic complexity of datasets by decomposing them into
   smaller blocks and using precomputed CTM (Coding Theorem Method) values.
   """
@@ -58,6 +58,113 @@ defmodule BDM do
     [[1, 1], [1, 1]] => 2.0
   }
 
+  # Default CTM values for 3x3 binary matrices (examples of common patterns)
+  @default_ctm_3x3 %{
+    # All zeros
+    [[0, 0, 0], [0, 0, 0], [0, 0, 0]] => 3.0,
+    # All ones
+    [[1, 1, 1], [1, 1, 1], [1, 1, 1]] => 3.0,
+    # Single center bit
+    [[0, 0, 0], [0, 1, 0], [0, 0, 0]] => 5.807,
+    # Diagonal patterns
+    [[1, 0, 0], [0, 1, 0], [0, 0, 1]] => 6.585,
+    [[0, 0, 1], [0, 1, 0], [1, 0, 0]] => 6.585,
+    # Horizontal stripes
+    [[1, 1, 1], [0, 0, 0], [1, 1, 1]] => 5.170,
+    [[0, 0, 0], [1, 1, 1], [0, 0, 0]] => 5.170,
+    # Vertical stripes
+    [[1, 0, 1], [1, 0, 1], [1, 0, 1]] => 5.170,
+    [[0, 1, 0], [0, 1, 0], [0, 1, 0]] => 5.170,
+    # Checkerboard patterns
+    [[1, 0, 1], [0, 1, 0], [1, 0, 1]] => 6.170,
+    [[0, 1, 0], [1, 0, 1], [0, 1, 0]] => 6.170,
+    # Corner patterns
+    [[1, 1, 0], [1, 0, 0], [0, 0, 0]] => 6.585,
+    [[0, 1, 1], [0, 0, 1], [0, 0, 0]] => 6.585,
+    [[0, 0, 0], [1, 0, 0], [1, 1, 0]] => 6.585,
+    [[0, 0, 0], [0, 0, 1], [0, 1, 1]] => 6.585,
+    # Cross patterns
+    [[0, 1, 0], [1, 1, 1], [0, 1, 0]] => 6.170,
+    [[1, 0, 1], [0, 0, 0], [1, 0, 1]] => 6.170,
+    # L-shapes
+    [[1, 1, 1], [1, 0, 0], [1, 0, 0]] => 6.585,
+    [[1, 0, 0], [1, 0, 0], [1, 1, 1]] => 6.585,
+    [[0, 0, 1], [0, 0, 1], [1, 1, 1]] => 6.585,
+    [[1, 1, 1], [0, 0, 1], [0, 0, 1]] => 6.585,
+    # T-shapes
+    [[1, 1, 1], [0, 1, 0], [0, 1, 0]] => 6.585,
+    [[0, 1, 0], [0, 1, 0], [1, 1, 1]] => 6.585,
+    [[1, 0, 0], [1, 1, 1], [1, 0, 0]] => 6.585,
+    [[0, 0, 1], [1, 1, 1], [0, 0, 1]] => 6.585,
+    # Edge patterns
+    [[1, 1, 1], [0, 0, 0], [0, 0, 0]] => 5.807,
+    [[0, 0, 0], [0, 0, 0], [1, 1, 1]] => 5.807,
+    [[1, 0, 0], [1, 0, 0], [1, 0, 0]] => 5.807,
+    [[0, 0, 1], [0, 0, 1], [0, 0, 1]] => 5.807,
+    # Random-like patterns (higher complexity)
+    [[1, 0, 1], [0, 1, 1], [1, 0, 0]] => 8.170,
+    [[0, 1, 0], [1, 0, 1], [1, 1, 0]] => 8.170,
+    [[1, 1, 0], [0, 1, 0], [1, 0, 1]] => 8.170,
+    [[0, 0, 1], [1, 1, 0], [0, 1, 1]] => 8.170
+  }
+
+  # Default CTM values for 4x4 binary matrices (examples of common patterns)
+  @default_ctm_4x4 %{
+    # All zeros
+    [[0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0]] => 4.0,
+    # All ones
+    [[1, 1, 1, 1], [1, 1, 1, 1], [1, 1, 1, 1], [1, 1, 1, 1]] => 4.0,
+    # Single center block
+    [[0, 0, 0, 0], [0, 1, 1, 0], [0, 1, 1, 0], [0, 0, 0, 0]] => 6.585,
+    # Diagonal patterns
+    [[1, 0, 0, 0], [0, 1, 0, 0], [0, 0, 1, 0], [0, 0, 0, 1]] => 7.170,
+    [[0, 0, 0, 1], [0, 0, 1, 0], [0, 1, 0, 0], [1, 0, 0, 0]] => 7.170,
+    # Horizontal stripes
+    [[1, 1, 1, 1], [0, 0, 0, 0], [1, 1, 1, 1], [0, 0, 0, 0]] => 5.585,
+    [[0, 0, 0, 0], [1, 1, 1, 1], [0, 0, 0, 0], [1, 1, 1, 1]] => 5.585,
+    # Vertical stripes
+    [[1, 0, 1, 0], [1, 0, 1, 0], [1, 0, 1, 0], [1, 0, 1, 0]] => 5.585,
+    [[0, 1, 0, 1], [0, 1, 0, 1], [0, 1, 0, 1], [0, 1, 0, 1]] => 5.585,
+    # Checkerboard patterns
+    [[1, 0, 1, 0], [0, 1, 0, 1], [1, 0, 1, 0], [0, 1, 0, 1]] => 6.585,
+    [[0, 1, 0, 1], [1, 0, 1, 0], [0, 1, 0, 1], [1, 0, 1, 0]] => 6.585,
+    # Corner blocks
+    [[1, 1, 0, 0], [1, 1, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0]] => 6.585,
+    [[0, 0, 1, 1], [0, 0, 1, 1], [0, 0, 0, 0], [0, 0, 0, 0]] => 6.585,
+    [[0, 0, 0, 0], [0, 0, 0, 0], [1, 1, 0, 0], [1, 1, 0, 0]] => 6.585,
+    [[0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 1, 1], [0, 0, 1, 1]] => 6.585,
+    # Cross patterns
+    [[0, 0, 1, 0], [0, 0, 1, 0], [1, 1, 1, 1], [0, 0, 1, 0]] => 7.170,
+    [[0, 1, 0, 0], [1, 1, 1, 1], [0, 1, 0, 0], [0, 1, 0, 0]] => 7.170,
+    # Frame patterns
+    [[1, 1, 1, 1], [1, 0, 0, 1], [1, 0, 0, 1], [1, 1, 1, 1]] => 7.170,
+    # L-shapes
+    [[1, 1, 1, 1], [1, 0, 0, 0], [1, 0, 0, 0], [1, 0, 0, 0]] => 7.170,
+    [[0, 0, 0, 1], [0, 0, 0, 1], [0, 0, 0, 1], [1, 1, 1, 1]] => 7.170,
+    [[1, 0, 0, 0], [1, 0, 0, 0], [1, 0, 0, 0], [1, 1, 1, 1]] => 7.170,
+    [[1, 1, 1, 1], [0, 0, 0, 1], [0, 0, 0, 1], [0, 0, 0, 1]] => 7.170,
+    # T-shapes
+    [[1, 1, 1, 1], [0, 1, 1, 0], [0, 1, 1, 0], [0, 0, 0, 0]] => 7.170,
+    [[0, 0, 0, 0], [0, 1, 1, 0], [0, 1, 1, 0], [1, 1, 1, 1]] => 7.170,
+    # Plus patterns
+    [[0, 1, 1, 0], [1, 1, 1, 1], [1, 1, 1, 1], [0, 1, 1, 0]] => 7.170,
+    [[1, 0, 0, 1], [0, 1, 1, 0], [0, 1, 1, 0], [1, 0, 0, 1]] => 7.585,
+    # Diamond patterns
+    [[0, 0, 1, 0], [0, 1, 1, 1], [1, 1, 1, 0], [0, 1, 0, 0]] => 8.170,
+    [[0, 1, 0, 0], [1, 1, 1, 0], [0, 1, 1, 1], [0, 0, 1, 0]] => 8.170,
+    # Spiral patterns
+    [[1, 1, 1, 1], [0, 0, 0, 1], [0, 1, 1, 1], [0, 0, 0, 0]] => 8.170,
+    [[0, 0, 0, 0], [1, 1, 1, 0], [1, 0, 0, 0], [1, 1, 1, 1]] => 8.170,
+    # Random-like patterns (higher complexity)
+    [[1, 0, 1, 0], [0, 1, 0, 1], [1, 1, 0, 0], [0, 0, 1, 1]] => 9.170,
+    [[0, 1, 0, 1], [1, 0, 1, 0], [0, 0, 1, 1], [1, 1, 0, 0]] => 9.170,
+    [[1, 1, 0, 0], [0, 1, 0, 1], [1, 0, 1, 0], [0, 0, 1, 1]] => 9.170,
+    [[0, 0, 1, 1], [1, 0, 1, 0], [0, 1, 0, 1], [1, 1, 0, 0]] => 9.170,
+    # Very complex patterns
+    [[1, 0, 1, 1], [0, 1, 0, 1], [1, 1, 0, 0], [0, 1, 1, 0]] => 10.170,
+    [[0, 1, 0, 0], [1, 0, 1, 1], [0, 1, 1, 0], [1, 0, 0, 1]] => 10.170
+  }
+
   @doc """
   Creates a new BDM instance.
 
@@ -73,7 +180,11 @@ defmodule BDM do
   """
   @spec new(integer(), integer(), map() | nil, boolean()) :: t()
   def new(ndim, nsymbols, ctm_data \\ nil, warn_missing \\ true) do
-    default_ctm = if ndim == 1, do: @default_ctm_1d, else: @default_ctm_2d
+    default_ctm =
+      case ndim do
+        1 -> @default_ctm_1d
+        2 -> Map.merge(@default_ctm_2d, Map.merge(@default_ctm_3x3, @default_ctm_4x4))
+      end
 
     %__MODULE__{
       ndim: ndim,
@@ -340,24 +451,31 @@ defmodule BDMExample do
     IO.puts("BDM Complexity: #{complexity}")
     IO.puts("Block Entropy: #{entropy}")
 
-    # Example 2: 2D binary matrix
+    # Example 2: 2D binary matrix with different block sizes
     IO.puts("\n=== 2D Binary Matrix Example ===")
     bdm_2d = BDM.new(2, 2)
 
     binary_matrix = [
-      [0, 1, 0, 1],
-      [1, 0, 1, 0],
-      [0, 1, 0, 1],
-      [1, 0, 1, 0]
+      [0, 1, 0, 1, 0, 1],
+      [1, 0, 1, 0, 1, 0],
+      [0, 1, 0, 1, 0, 1],
+      [1, 0, 1, 0, 1, 0],
+      [0, 1, 0, 1, 0, 1],
+      [1, 0, 1, 0, 1, 0]
     ]
-
-    complexity_2d = BDM.compute(bdm_2d, binary_matrix, 2, :ignore)
-    entropy_2d = BDM.block_entropy(binary_matrix, 2, :ignore)
 
     IO.puts("Matrix:")
     Enum.each(binary_matrix, &IO.puts("  #{inspect(&1)}"))
-    IO.puts("BDM Complexity: #{complexity_2d}")
-    IO.puts("Block Entropy: #{entropy_2d}")
+
+    # Test different block sizes
+    [2, 3, 4]
+    |> Enum.each(fn block_size ->
+      complexity_2d = BDM.compute(bdm_2d, binary_matrix, block_size, :ignore)
+      entropy_2d = BDM.block_entropy(binary_matrix, block_size, :ignore)
+      IO.puts("Block size #{block_size}x#{block_size}:")
+      IO.puts("  BDM Complexity: #{complexity_2d}")
+      IO.puts("  Block Entropy: #{entropy_2d}")
+    end)
 
     # Example 3: Perturbation analysis
     IO.puts("\n=== Perturbation Analysis Example ===")

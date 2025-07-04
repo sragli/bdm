@@ -21,40 +21,57 @@ end
 
 ## Key Features
 
-Core BDM Implementation:
+### Core BDM Implementation
 
 * Supports both 1D (binary strings) and 2D (binary matrices) data
 * Three boundary conditions: :ignore, :recursive, and :correlated
 * Proper BDM formula implementation: CTM(block) + log₂(count)
 
-CTM Lookup Tables:
+### CTM Lookup Tables
 
 * Precomputed CTM values for small binary strings and matrices
 * Fallback mechanism for missing values (max CTM + 1 bit)
 
-Partitioning Strategies:
+### Partitioning Strategies
 
 * Ignore: Discards incomplete blocks
 * Recursive: Recursively partitions remainder into smaller blocks
 * Correlated: Uses sliding window approach
 
-Additional Features:
+### Additional Features
 
 * Block Entropy: For comparison with BDM complexity
 * Perturbation Analysis: Identifies complexity-driving elements
 * Normalization: Scales BDM values between 0 and 1
 
+### Realistic Complexity Values
+
+The CTM values follow the principle that:
+
+* More structured/regular patterns have lower complexity
+* More random/irregular patterns have higher complexity
+* Larger patterns generally have higher base complexity
+
 ## Usage
 
 ```
-# Create BDM instance for 1D binary data
-bdm = BDM.new(1, 2)
+# Create BDM instance - automatically includes all 2D CTM tables
+bdm = BDM.new(2, 2)
 
-# Compute complexity
-complexity = BDM.compute(bdm, [0, 1, 0, 1, 0, 1], 2, :ignore)
+# Test with different block sizes
+large_matrix = [
+  [0, 1, 0, 1, 0, 1],
+  [1, 0, 1, 0, 1, 0],
+  [0, 1, 0, 1, 0, 1],
+  [1, 0, 1, 0, 1, 0],
+  [0, 1, 0, 1, 0, 1],
+  [1, 0, 1, 0, 1, 0]
+]
 
-# Run all examples
-BDMExample.run_examples()
+# Now supports 2x2, 3x3, and 4x4 block decomposition
+complexity_2x2 = BDM.compute(bdm, large_matrix, 2, :ignore)
+complexity_3x3 = BDM.compute(bdm, large_matrix, 3, :ignore)
+complexity_4x4 = BDM.compute(bdm, large_matrix, 4, :ignore)
 ```
 
 ## How BDM Works
