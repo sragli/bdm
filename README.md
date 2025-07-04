@@ -2,6 +2,10 @@
 
 Elixir module that implements the Block Decomposition Method (BDM).
 
+For more details:
+* Hector Zenil, Santiago Hernández-Orozco, Narsis A. Kiani, Fernando Soler-Toscano, Antonio Rueda-Toicen 2018 A Decomposition Method for Global Evaluation of Shannon Entropy and Local Estimations of Algorithmic Complexity. arXiv:1609.00110
+* Hector Zenil, Narsis A. Kiani, Jesper Tegnr: Algorithmic Information Dynamics: A Computational Approach to Causality with Applications to Living Systems
+
 ## Installation
 
 If [available in Hex](https://hex.pm/docs/publish), the package can be installed
