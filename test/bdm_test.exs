@@ -12,6 +12,7 @@ defmodule BdmTest do
 
   test "works correctly for 2d matrices" do
     bdm = BDM.new(2, 2)
+
     m = [
       [0, 1, 0, 1, 0, 1],
       [1, 0, 1, 0, 1, 0],
