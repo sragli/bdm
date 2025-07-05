@@ -24,3 +24,6 @@ bdm-*.tar
 
 # Temporary files, for example, from tests.
 /tmp/
+
+# Visual Studio config
+.vscode
