@@ -53,7 +53,7 @@ The CTM values follow the principle that:
 
 ## Usage
 
-```
+```elixir
 # Create BDM instance - automatically includes all 2D CTM tables
 bdm = BDM.new(2, 2)
 
