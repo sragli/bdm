@@ -1,4 +1,4 @@
-defmodule BdmTest do
+defmodule BDMTest do
   use ExUnit.Case
 
   test "works correctly for lists" do

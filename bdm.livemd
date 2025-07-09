@@ -1,0 +1,319 @@
+# Block Decomposition Method (BDM) LiveBook
+
+## Introduction
+
+The Block Decomposition Method (BDM) is a computational approach developed by Hector Zenil and colleagues to approximate the algorithmic complexity of datasets. This method extends the Coding Theorem Method (CTM) to handle larger datasets by decomposing them into smaller blocks and aggregating their complexities.
+
+## Theory and Background
+
+### Algorithmic Complexity
+
+Algorithmic complexity (also known as Kolmogorov complexity) measures the length of the shortest computer program that can generate a given dataset. While this is theoretically uncomputable, BDM provides a practical approximation.
+
+### Key Concepts
+
+* **Coding Theorem Method (CTM)**: Uses precomputed output frequency distributions from Turing machines
+* **Block Decomposition**: Breaks large datasets into manageable blocks
+* **Algorithmic Probability**: Theoretical foundation based on Solomonoff-Levin theory
+
+## Installation and Setup
+
+```elixir
+Mix.install([
+  {:nx, "~> 0.6"},
+  {:kino, "~> 0.11"},
+  {:explorer, "~> 0.7"},
+  {:vega_lite, "~> 0.1"},
+  {:kino_vega_lite, "~> 0.1"},
+  {:bdm, path: __DIR__}
+])
+
+alias VegaLite, as: Vl
+```
+
+## Interactive Examples
+
+### Example 1: Simple Binary Sequences
+
+```elixir
+# Create different types of binary sequences
+random_seq = for _ <- 1..30, do: Enum.random([0, 1])
+ordered_seq = List.duplicate([0, 1], 15) |> List.flatten()
+constant_seq = List.duplicate(0, 30)
+
+# Calculate BDM for each sequence
+bdm = BDM.new(1, 2)
+
+random_bdm = BDM.compute(bdm, random_seq, 3, :ignore)
+ordered_bdm = BDM.compute(bdm, ordered_seq, 3, :ignore)
+constant_bdm = BDM.compute(bdm, constant_seq, 3, :ignore)
+
+# Display the sequences
+Kino.Layout.grid([
+  Kino.Text.new("Random: #{inspect(random_seq)}, BDM: #{random_bdm}"),
+  Kino.Text.new("Ordered: #{inspect(ordered_seq)}, BDM: #{ordered_bdm}"),
+  Kino.Text.new("Constant: #{inspect(constant_seq)}, BDM: #{constant_bdm}")
+])
+```
+
+### Example 2: 2D Pattern Analysis
+
+```elixir
+defmodule TestData do
+  def create_2d_pattern(type, size) do
+    case type do
+      :random ->
+        for _ <- 1..size, do: for(_ <- 1..size, do: Enum.random([0, 1]))
+      
+      :checkerboard ->
+        for i <- 0..(size-1) do
+          for j <- 0..(size-1) do
+            rem(i + j, 2)
+          end
+        end
+      
+      :diagonal ->
+        for i <- 0..(size-1) do
+          for j <- 0..(size-1) do
+            if i == j, do: 1, else: 0
+          end
+        end
+      
+      :constant ->
+        for _ <- 1..size, do: List.duplicate(0, size)
+    end
+  end
+end
+
+bdm = BDM.new(2, 2)
+
+# Generate different 2D patterns
+patterns = %{
+  random: TestData.create_2d_pattern(:random, 8),
+  checkerboard: TestData.create_2d_pattern(:checkerboard, 8),
+  diagonal: TestData.create_2d_pattern(:diagonal, 8),
+  constant: TestData.create_2d_pattern(:constant, 8)
+}
+
+# Calculate BDM for each pattern
+bdm_results = 
+  patterns
+  |> Enum.map(fn {name, pattern} ->
+    bdm_value = BDM.compute(bdm, pattern, 2, :ignore)
+    {name, bdm_value}
+  end)
+  |> Enum.into(%{})
+
+IO.puts("2D Pattern BDM Results:")
+for {name, bdm} <- bdm_results do
+  IO.puts("#{name}: #{bdm}")
+end
+```
+
+### Example 3: Interactive Visualization
+
+```elixir
+bdm = BDM.new(1, 2)
+
+# Create data for visualization
+sequence_lengths = [10, 20, 30, 40, 50]
+complexity_data = 
+  for len <- sequence_lengths do
+    random_seq = for _ <- 1..len, do: Enum.random([0, 1])
+    ordered_seq = List.duplicate([0, 1], div(len, 2)) |> List.flatten() |> Enum.take(len)
+    constant_seq = List.duplicate(0, len)
+    
+    %{
+      length: len,
+      random: BDM.compute(bdm, random_seq, 3, :ignore),
+      ordered: BDM.compute(bdm, ordered_seq, 3, :ignore),
+      constant: BDM.compute(bdm, constant_seq, 3, :ignore)
+    }
+  end
+
+# Transform data for plotting
+plot_data = 
+  complexity_data
+  |> Enum.flat_map(fn row ->
+    [
+      %{length: row.length, complexity: row.random, type: "Random"},
+      %{length: row.length, complexity: row.ordered, type: "Ordered"},
+      %{length: row.length, complexity: row.constant, type: "Constant"}
+    ]
+  end)
+
+# Create visualization
+Vl.new(width: 600, height: 400)
+|> Vl.data_from_values(plot_data)
+|> Vl.mark(:line, point: true)
+|> Vl.encode_field(:x, "length", type: :quantitative, title: "Sequence Length")
+|> Vl.encode_field(:y, "complexity", type: :quantitative, title: "BDM Complexity")
+|> Vl.encode_field(:color, "type", type: :nominal, title: "Sequence Type")
+|> Vl.config(legend: [orient: "top"])
+```
+
+## Advanced Features
+
+### Block Size Analysis
+
+```elixir
+bdm = BDM.new(1, 2)
+
+# Analyze how block size affects BDM estimation
+test_sequence = for _ <- 1..100, do: Enum.random([0, 1])
+
+block_sizes = [2, 3, 4, 5]
+block_analysis = 
+  for block_size <- block_sizes do
+    bdm_value = BDM.compute(bdm, test_sequence, block_size, :ignore)
+    %{block_size: block_size, bdm_value: bdm_value}
+  end
+
+IO.puts("Block Size Analysis:")
+for result <- block_analysis do
+  IO.puts("Block size #{result.block_size}: BDM = #{result.bdm_value}")
+end
+```
+
+### Comparative Analysis with Shannon Entropy
+
+```elixir
+defmodule Entropy do
+  def shannon_entropy(data) do
+    frequencies = Enum.frequencies(data)
+    total = length(data)
+    
+    frequencies
+    |> Enum.map(fn {_, count} ->
+      p = count / total
+      -p * :math.log2(p)
+    end)
+    |> Enum.sum()
+  end
+end
+
+bdm = BDM.new(1, 2)
+
+# Compare BDM with Shannon entropy
+comparison_data = [
+  {List.duplicate(0, 50), "All zeros"},
+  {for(_ <- 1..50, do: Enum.random([0, 1])), "Random"},
+  {List.duplicate([0, 1], 25) |> List.flatten(), "Alternating"},
+  {[0, 0, 1] |> List.duplicate(16) |> List.flatten() |> Enum.take(50), "Pattern 001"}
+]
+
+data = for {sequence, name} <- comparison_data do
+  bdm_val = BDM.compute(bdm, sequence, 3, :ignore)
+  entropy_val = Entropy.shannon_entropy(sequence)
+  %{
+    "Pattern" => name,
+    "BDM" => Float.round(bdm_val, 2),
+    "Entropy" => Float.round(entropy_val, 2)
+  }
+end
+
+Kino.DataTable.new(
+  data,
+  keys: ["Pattern", "BDM", "Entropy"],
+  name: "BDM vs Shannon Entropy Comparison"
+)
+```
+
+## Real-World Applications
+
+### Cellular Automata Analysis
+
+```elixir
+defmodule CellularAutomata do
+  @doc """
+  Implementation of Rule 30 cellular automaton.
+  """
+  def rule_30(initial_state, steps) do
+    evolve(initial_state, steps, &rule_30_step/1)
+  end
+  
+  defp rule_30_step(state) do
+    len = length(state)
+    for i <- 0..(len-1) do
+      left = Enum.at(state, rem(i - 1 + len, len))
+      center = Enum.at(state, i)
+      right = Enum.at(state, rem(i + 1, len))
+      
+      case {left, center, right} do
+        {1, 1, 1} -> 0
+        {1, 1, 0} -> 0
+        {1, 0, 1} -> 0
+        {1, 0, 0} -> 1
+        {0, 1, 1} -> 1
+        {0, 1, 0} -> 1
+        {0, 0, 1} -> 1
+        {0, 0, 0} -> 0
+      end
+    end
+  end
+  
+  defp evolve(state, 0, _rule), do: [state]
+  defp evolve(state, steps, rule) do
+    next_state = rule.(state)
+    [state | evolve(next_state, steps - 1, rule)]
+  end
+end
+
+# Generate cellular automaton evolution
+initial_state = [0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0]
+evolution = CellularAutomata.rule_30(initial_state, 20)
+
+bdm = BDM.new(1, 2)
+
+# Calculate BDM for each step
+evolution_complexity = 
+  evolution
+  |> Enum.with_index()
+  |> Enum.map(fn {state, step} ->
+    bdm_val = BDM.compute(bdm, state, 2, :ignore)
+    %{step: step, complexity: bdm_val}
+  end)
+
+IO.puts("Cellular Automata Evolution Complexity:")
+for result <- Enum.take(evolution_complexity, 10) do
+  IO.puts("Step #{result.step}: BDM = #{Float.round(result.complexity, 2)}")
+end
+```
+
+## Performance Considerations
+
+### Memory and Time Complexity
+
+```elixir
+# Benchmark BDM calculation time
+defmodule Benchmark do
+  def time_function(func) do
+    start_time = System.monotonic_time(:millisecond)
+    result = func.()
+    end_time = System.monotonic_time(:millisecond)
+    {result, end_time - start_time}
+  end
+end
+
+# Test with different sequence lengths
+sequence_lengths = [100, 500, 1000, 2000]
+
+bdm = BDM.new(1, 2)
+
+data = for len <- sequence_lengths do
+  test_seq = for _ <- 1..len, do: Enum.random([0, 1])
+  {bdm_val, time_ms} = Benchmark.time_function(fn -> BDM.compute(bdm, test_seq, 2, :ignore) end)
+  %{
+    "Length" => len,
+    "Time (ms)" => time_ms,
+    "BDM" =>Float.round(bdm_val, 2)
+  }
+end
+
+Kino.DataTable.new(
+  data,
+  keys: ["Length", "Time (ms)", "BDM"],
+  name: "Performance Analysis"
+)
+
+```

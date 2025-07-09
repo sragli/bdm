@@ -1,4 +1,4 @@
-defmodule Bdm.MixProject do
+defmodule BDM.MixProject do
   use Mix.Project
 
   def project do
