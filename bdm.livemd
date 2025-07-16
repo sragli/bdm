@@ -94,6 +94,39 @@ patterns = %{
 }
 ```
 
+```elixir
+defmodule Visualizer do
+  def create_heatmap(image, title) do
+    data = image
+    |> Enum.with_index()
+    |> Enum.flat_map(fn {row, i} ->
+      row
+      |> Enum.with_index()
+      |> Enum.map(fn {value, j} ->
+        %{x: j, y: i, value: value, image: title}
+      end)
+    end)
+
+    Vl.new(width: 200, height: 200, title: title)
+    |> Vl.data_from_values(data)
+    |> Vl.mark(:rect)
+    |> Vl.encode_field(:x, "x", type: :ordinal, title: "Column")
+    |> Vl.encode_field(:y, "y", type: :ordinal, title: "Row", sort: :descending)
+    |> Vl.encode_field(:color, "value", 
+        type: :quantitative, 
+        scale: [scheme: "viridis"],
+        title: "Value")
+  end
+end
+
+random = Visualizer.create_heatmap(patterns.random, "Random")
+checkerboard = Visualizer.create_heatmap(patterns.checkerboard, "Checkerboard")
+diagonal = Visualizer.create_heatmap(patterns.diagonal, "Diagonal")
+constant = Visualizer.create_heatmap(patterns.constant, "Constant")
+
+Kino.Layout.grid([random, checkerboard, diagonal, constant], columns: 2)
+```
+
 Calculate BDM for each pattern:
 
 ```elixir
