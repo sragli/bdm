@@ -69,7 +69,7 @@ defmodule BDMExample do
 
     # Example 3: Perturbation analysis
     IO.puts("\n=== Perturbation Analysis Example ===")
-    perturbations = BDM.perturbation_analysis([0, 0, 0, 1, 1, 1], 2, :ignore)
+    perturbations = BDM.perturbation_analysis(bdm_1d, [0, 0, 0, 1, 1, 1], 2, :ignore)
     IO.puts("Perturbation effects:")
 
     Enum.each(perturbations, fn {pos, effect} ->

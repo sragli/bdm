@@ -55,16 +55,14 @@ The CTM values follow the principle that:
 
 * BDM.new/4 - Creates a new BDM analysis structure
 * compute/4 - Computes the BDM complexity of a dataset
-* perturbation_analysis/3 - Performs perturbation analysis to identify complexity-driving elements
+* perturbation_analysis/4 - Performs perturbation analysis to identify complexity-driving elements
 * normalize/2 - Normalizes BDM value between 0 and 1
 
 ## Usage
 
 ```elixir
-# Create BDM instance - automatically includes all 2D CTM tables
 bdm = BDM.new(2, 2)
 
-# Test with different block sizes
 large_matrix = [
   [0, 1, 0, 1, 0, 1],
   [1, 0, 1, 0, 1, 0],
@@ -74,10 +72,9 @@ large_matrix = [
   [1, 0, 1, 0, 1, 0]
 ]
 
-# Now supports 2x2, 3x3, and 4x4 block decomposition
 complexity_2x2 = BDM.compute(bdm, large_matrix, 2, :ignore)
-complexity_3x3 = BDM.compute(bdm, large_matrix, 3, :ignore)
-complexity_4x4 = BDM.compute(bdm, large_matrix, 4, :ignore)
+normalized_complexity = BDM.normalize(complexity_2x2, large_matrix)
+perturbations_2x2 = BDM.perturbation_analysis(bdm, large_matrix, 2, :ignore)
 ```
 
 ## How BDM Works

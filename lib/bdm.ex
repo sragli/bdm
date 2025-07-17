@@ -225,30 +225,26 @@ defmodule BDM do
   @doc """
   Performs perturbation analysis to identify complexity-driving elements.
   """
-  @spec perturbation_analysis(binary_string() | binary_matrix(), integer(), boundary_condition()) ::
+  @spec perturbation_analysis(t(), binary_string() | binary_matrix(), integer(), boundary_condition()) ::
           list({integer(), float()})
-  def perturbation_analysis(data, block_size, boundary) do
-    bdm = new(if(is_list(hd(data)), do: 2, else: 1), 2)
+  def perturbation_analysis(%__MODULE__{ndim: 1} = bdm, data, block_size, boundary) do
     original_complexity = compute(bdm, data, block_size, boundary)
 
-    # Test perturbations at each position
-    case data do
-      data when is_list(data) and is_list(hd(data)) ->
-        # 2D case
-        for {row, i} <- Enum.with_index(data),
-            {_val, j} <- Enum.with_index(row) do
-          perturbed_data = flip_bit_2d(data, i, j)
-          new_complexity = compute(bdm, perturbed_data, block_size, boundary)
-          {{i, j}, new_complexity - original_complexity}
-        end
+    for {_val, i} <- Enum.with_index(data) do
+      perturbed_data = flip_bit_1d(data, i)
+      new_complexity = compute(bdm, perturbed_data, block_size, boundary)
+      {i, new_complexity - original_complexity}
+    end
+  end
 
-      data when is_list(data) ->
-        # 1D case
-        for {_val, i} <- Enum.with_index(data) do
-          perturbed_data = flip_bit_1d(data, i)
-          new_complexity = compute(bdm, perturbed_data, block_size, boundary)
-          {i, new_complexity - original_complexity}
-        end
+  def perturbation_analysis(%__MODULE__{ndim: 2} = bdm, data, block_size, boundary) do
+    original_complexity = compute(bdm, data, block_size, boundary)
+
+    for {row, i} <- Enum.with_index(data),
+        {_val, j} <- Enum.with_index(row) do
+      perturbed_data = flip_bit_2d(data, i, j)
+      new_complexity = compute(bdm, perturbed_data, block_size, boundary)
+      {{i, j}, new_complexity - original_complexity}
     end
   end
 
