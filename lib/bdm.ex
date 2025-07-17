@@ -223,144 +223,6 @@ defmodule BDM do
   end
 
   @doc """
-  Partitions 1D data into blocks according to boundary condition.
-  """
-  @spec partition_1d(binary_string(), integer(), boundary_condition()) :: list(binary_string())
-  defp partition_1d(data, block_size, :ignore) do
-    data
-    |> Enum.chunk_every(block_size, block_size, :discard)
-  end
-
-  defp partition_1d(data, block_size, :recursive) do
-    chunks = Enum.chunk_every(data, block_size, block_size, :discard)
-    remainder = Enum.drop(data, length(chunks) * block_size)
-
-    if length(remainder) > 0 and length(remainder) >= div(block_size, 2) do
-      recursive_chunks = partition_1d(remainder, div(block_size, 2), :recursive)
-      chunks ++ recursive_chunks
-    else
-      chunks
-    end
-  end
-
-  defp partition_1d(data, block_size, :correlated) do
-    data_length = length(data)
-
-    if data_length < block_size do
-      [data]
-    else
-      0..(data_length - block_size)
-      |> Enum.map(&Enum.slice(data, &1, block_size))
-    end
-  end
-
-  @doc """
-  Partitions 2D data into blocks according to boundary condition.
-  """
-  @spec partition_2d(binary_matrix(), integer(), boundary_condition()) :: list(binary_matrix())
-  defp partition_2d(data, block_size, :ignore) do
-    rows = length(data)
-    cols = if rows > 0, do: length(hd(data)), else: 0
-
-    for i <- 0..(div(rows, block_size) - 1),
-        j <- 0..(div(cols, block_size) - 1) do
-      extract_block(data, i * block_size, j * block_size, block_size, block_size)
-    end
-  end
-
-  defp partition_2d(data, block_size, :recursive) do
-    primary_blocks = partition_2d(data, block_size, :ignore)
-
-    # Handle remainder areas recursively (simplified implementation)
-    primary_blocks
-  end
-
-  defp partition_2d(data, block_size, :correlated) do
-    rows = length(data)
-    cols = if rows > 0, do: length(hd(data)), else: 0
-
-    for i <- 0..(rows - block_size),
-        j <- 0..(cols - block_size) do
-      extract_block(data, i, j, block_size, block_size)
-    end
-  end
-
-  @doc """
-  Extracts a block from 2D data.
-  """
-  @spec extract_block(binary_matrix(), integer(), integer(), integer(), integer()) ::
-          binary_matrix()
-  defp extract_block(data, start_row, start_col, height, width) do
-    data
-    |> Enum.slice(start_row, height)
-    |> Enum.map(&Enum.slice(&1, start_col, width))
-  end
-
-  @doc """
-  Looks up CTM values for blocks and aggregates them using BDM formula.
-  """
-  @spec lookup_and_aggregate(list(binary_string() | binary_matrix()), t()) :: float()
-  defp lookup_and_aggregate(blocks, %__MODULE__{ctm_data: ctm_data, warn_missing: warn_missing}) do
-    # Count occurrences of each unique block
-    block_counts = Enum.frequencies(blocks)
-
-    # Apply BDM formula: sum of CTM(block) + log2(count) for each unique block
-    block_counts
-    |> Enum.map(fn {block, count} ->
-      ctm_value = get_ctm_value(block, ctm_data, warn_missing)
-      ctm_value + :math.log2(count)
-    end)
-    |> Enum.sum()
-  end
-
-  @doc """
-  Gets CTM value for a block, with fallback for missing values.
-  """
-  @spec get_ctm_value(binary_string() | binary_matrix(), map(), boolean()) :: float()
-  defp get_ctm_value(block, ctm_data, warn_missing) do
-    case Map.get(ctm_data, block) do
-      nil ->
-        if warn_missing do
-          IO.warn("Missing CTM value for block: #{inspect(block)}")
-        end
-
-        # Fallback: use maximum CTM value + 1 bit
-        max_ctm = ctm_data |> Map.values() |> Enum.max()
-        max_ctm + 1.0
-
-      value ->
-        value
-    end
-  end
-
-  @doc """
-  Computes block entropy for comparison with BDM.
-  """
-  @spec block_entropy(binary_string() | binary_matrix(), integer(), boundary_condition()) ::
-          float()
-  def block_entropy(data, block_size, boundary) do
-    blocks =
-      case data do
-        data when is_list(data) and is_list(hd(data)) ->
-          partition_2d(data, block_size, boundary)
-
-        data when is_list(data) ->
-          partition_1d(data, block_size, boundary)
-      end
-
-    # Calculate entropy over block distribution
-    block_counts = Enum.frequencies(blocks)
-    total_blocks = length(blocks)
-
-    block_counts
-    |> Enum.map(fn {_block, count} ->
-      probability = count / total_blocks
-      -probability * :math.log2(probability)
-    end)
-    |> Enum.sum()
-  end
-
-  @doc """
   Performs perturbation analysis to identify complexity-driving elements.
   """
   @spec perturbation_analysis(binary_string() | binary_matrix(), integer(), boundary_condition()) ::
@@ -391,24 +253,6 @@ defmodule BDM do
   end
 
   @doc """
-  Flips a bit in 1D data.
-  """
-  @spec flip_bit_1d(binary_string(), integer()) :: binary_string()
-  defp flip_bit_1d(data, index) do
-    List.update_at(data, index, fn bit -> 1 - bit end)
-  end
-
-  @doc """
-  Flips a bit in 2D data.
-  """
-  @spec flip_bit_2d(binary_matrix(), integer(), integer()) :: binary_matrix()
-  defp flip_bit_2d(data, row, col) do
-    List.update_at(data, row, fn row_data ->
-      List.update_at(row_data, col, fn bit -> 1 - bit end)
-    end)
-  end
-
-  @doc """
   Normalizes BDM value between 0 and 1.
   """
   @spec normalize(float(), binary_string() | binary_matrix()) :: float()
@@ -430,70 +274,133 @@ defmodule BDM do
 
     (bdm_value - min_complexity) / (max_complexity - min_complexity)
   end
-end
 
-# Example usage module
-defmodule BDMExample do
-  @moduledoc """
-  Example usage of the BDM module.
-  """
+  #
+  # Partitions 1D data into blocks according to boundary condition.
+  #
+  @spec partition_1d(binary_string(), integer(), boundary_condition()) :: list(binary_string())
+  def partition_1d(data, block_size, :ignore) do
+    data
+    |> Enum.chunk_every(block_size, block_size, :discard)
+  end
 
-  def run_examples do
-    # Example 1: 1D binary string
-    IO.puts("=== 1D Binary String Example ===")
-    bdm_1d = BDM.new(1, 2)
-    binary_string = [0, 1, 0, 1, 0, 1, 1, 0, 1, 0]
+  def partition_1d(data, block_size, :recursive) do
+    chunks = Enum.chunk_every(data, block_size, block_size, :discard)
+    remainder = Enum.drop(data, length(chunks) * block_size)
 
-    complexity = BDM.compute(bdm_1d, binary_string, 2, :ignore)
-    entropy = BDM.block_entropy(binary_string, 2, :ignore)
+    if length(remainder) > 0 and length(remainder) >= div(block_size, 2) do
+      recursive_chunks = partition_1d(remainder, div(block_size, 2), :recursive)
+      chunks ++ recursive_chunks
+    else
+      chunks
+    end
+  end
 
-    IO.puts("Data: #{inspect(binary_string)}")
-    IO.puts("BDM Complexity: #{complexity}")
-    IO.puts("Block Entropy: #{entropy}")
+  def partition_1d(data, block_size, :correlated) do
+    data_length = length(data)
 
-    # Example 2: 2D binary matrix with different block sizes
-    IO.puts("\n=== 2D Binary Matrix Example ===")
-    bdm_2d = BDM.new(2, 2)
+    if data_length < block_size do
+      [data]
+    else
+      0..(data_length - block_size)
+      |> Enum.map(&Enum.slice(data, &1, block_size))
+    end
+  end
 
-    binary_matrix = [
-      [0, 1, 0, 1, 0, 1],
-      [1, 0, 1, 0, 1, 0],
-      [0, 1, 0, 1, 0, 1],
-      [1, 0, 1, 0, 1, 0],
-      [0, 1, 0, 1, 0, 1],
-      [1, 0, 1, 0, 1, 0]
-    ]
+  #
+  # Partitions 2D data into blocks according to boundary condition.
+  #
+  @spec partition_2d(binary_matrix(), integer(), boundary_condition()) :: list(binary_matrix())
+  def partition_2d(data, block_size, :ignore) do
+    rows = length(data)
+    cols = if rows > 0, do: length(hd(data)), else: 0
 
-    IO.puts("Matrix:")
-    Enum.each(binary_matrix, &IO.puts("  #{inspect(&1)}"))
+    for i <- 0..(div(rows, block_size) - 1),
+        j <- 0..(div(cols, block_size) - 1) do
+      extract_block(data, i * block_size, j * block_size, block_size, block_size)
+    end
+  end
 
-    # Test different block sizes
-    [2, 3, 4]
-    |> Enum.each(fn block_size ->
-      complexity_2d = BDM.compute(bdm_2d, binary_matrix, block_size, :ignore)
-      entropy_2d = BDM.block_entropy(binary_matrix, block_size, :ignore)
-      IO.puts("Block size #{block_size}x#{block_size}:")
-      IO.puts("  BDM Complexity: #{complexity_2d}")
-      IO.puts("  Block Entropy: #{entropy_2d}")
+  def partition_2d(data, block_size, :recursive) do
+    primary_blocks = partition_2d(data, block_size, :ignore)
+
+    # Handle remainder areas recursively (simplified implementation)
+    primary_blocks
+  end
+
+  def partition_2d(data, block_size, :correlated) do
+    rows = length(data)
+    cols = if rows > 0, do: length(hd(data)), else: 0
+
+    for i <- 0..(rows - block_size),
+        j <- 0..(cols - block_size) do
+      extract_block(data, i, j, block_size, block_size)
+    end
+  end
+
+  #
+  # Extracts a block from 2D data.
+  #
+  @spec extract_block(binary_matrix(), integer(), integer(), integer(), integer()) ::
+          binary_matrix()
+  defp extract_block(data, start_row, start_col, height, width) do
+    data
+    |> Enum.slice(start_row, height)
+    |> Enum.map(&Enum.slice(&1, start_col, width))
+  end
+
+  #
+  # Looks up CTM values for blocks and aggregates them using BDM formula.
+  #
+  @spec lookup_and_aggregate(list(binary_string() | binary_matrix()), t()) :: float()
+  defp lookup_and_aggregate(blocks, %__MODULE__{ctm_data: ctm_data, warn_missing: warn_missing}) do
+    # Count occurrences of each unique block
+    block_counts = Enum.frequencies(blocks)
+
+    # Apply BDM formula: sum of CTM(block) + log2(count) for each unique block
+    block_counts
+    |> Enum.map(fn {block, count} ->
+      ctm_value = get_ctm_value(block, ctm_data, warn_missing)
+      ctm_value + :math.log2(count)
     end)
+    |> Enum.sum()
+  end
 
-    # Example 3: Perturbation analysis
-    IO.puts("\n=== Perturbation Analysis Example ===")
-    perturbations = BDM.perturbation_analysis([0, 0, 0, 1, 1, 1], 2, :ignore)
-    IO.puts("Perturbation effects:")
+  #
+  # Gets CTM value for a block, with fallback for missing values.
+  #
+  @spec get_ctm_value(binary_string() | binary_matrix(), map(), boolean()) :: float()
+  defp get_ctm_value(block, ctm_data, warn_missing) do
+    case Map.get(ctm_data, block) do
+      nil ->
+        if warn_missing do
+          IO.warn("Missing CTM value for block: #{inspect(block)}")
+        end
 
-    Enum.each(perturbations, fn {pos, effect} ->
-      IO.puts("  Position #{pos}: #{effect}")
-    end)
+        # Fallback: use maximum CTM value + 1 bit
+        max_ctm = ctm_data |> Map.values() |> Enum.max()
+        max_ctm + 1.0
 
-    # Example 4: Different boundary conditions
-    IO.puts("\n=== Boundary Conditions Comparison ===")
-    test_data = [0, 1, 0, 1, 0, 1, 1]
+      value ->
+        value
+    end
+  end
 
-    [:ignore, :recursive, :correlated]
-    |> Enum.each(fn boundary ->
-      complexity = BDM.compute(bdm_1d, test_data, 3, boundary)
-      IO.puts("#{boundary}: #{complexity}")
+  #
+  # Flips a bit in 1D data.
+  #
+  @spec flip_bit_1d(binary_string(), integer()) :: binary_string()
+  defp flip_bit_1d(data, index) do
+    List.update_at(data, index, fn bit -> 1 - bit end)
+  end
+
+  #
+  # Flips a bit in 2D data.
+  #
+  @spec flip_bit_2d(binary_matrix(), integer(), integer()) :: binary_matrix()
+  defp flip_bit_2d(data, row, col) do
+    List.update_at(data, row, fn row_data ->
+      List.update_at(row_data, col, fn bit -> 1 - bit end)
     end)
   end
 end

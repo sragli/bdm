@@ -51,6 +51,13 @@ The CTM values follow the principle that:
 * More random/irregular patterns have higher complexity
 * Larger patterns generally have higher base complexity
 
+## Main Functions
+
+* BDM.new/4 - Creates a new BDM analysis structure
+* compute/4 - Computes the BDM complexity of a dataset
+* perturbation_analysis/3 - Performs perturbation analysis to identify complexity-driving elements
+* normalize/2 - Normalizes BDM value between 0 and 1
+
 ## Usage
 
 ```elixir
