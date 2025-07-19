@@ -84,7 +84,7 @@ The Coding Theorem Method (CTM) is a numerical approximation to the algorithmic 
 BDM builds upon the Coding Theorem Method (CTM), which approximates algorithmic complexity using this formula:
 
 $$
-K(s) ≈ -log₂(P(s))
+K(s) ≈ -log_2(P(s))
 $$
 
 where P(s) is the algorithmic probability of string s. CTM approximates algorithmic probability by exploring spaces of Turing machines with n symbols and m states, counting how many produce a given output, and dividing by the total number of machines that halt.
@@ -106,13 +106,13 @@ Step 4: Aggregation
 The CTM values for slices can be aggregated back to a global estimate of Kolmogorov complexity for the entire object using the BDM formula:
 
 $$
-BDM(X) = Σᵢ CTM(sᵢ) + log₂(nᵢ)
+BDM(X) = \sum_i{CTM(s_i) + log_2(n_i)}
 $$
 
 where:
 
 * i indexes the set of all unique slices
-* $CTM(sᵢ)$ is the complexity of slice i
+* $CTM(s_i)$ is the complexity of slice i
 * nᵢ is the number of occurrences of slice i
 
 ### Boundary Conditions
