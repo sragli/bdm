@@ -1,10 +1,6 @@
 defmodule BDM do
   @moduledoc """
   Block Decomposition Method (BDM) implementation for approximating algorithmic complexity.
-
-  This module implements the BDM algorithm developed by Hector Zenil et al
-  to approximate the algorithmic complexity of datasets by decomposing them into
-  smaller blocks and using precomputed CTM (Coding Theorem Method) values.
   """
 
   defstruct [:ndim, :nsymbols, :ctm_data, :warn_missing]

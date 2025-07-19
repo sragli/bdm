@@ -1,6 +1,6 @@
 # BDM
 
-Elixir module that implements the Block Decomposition Method (BDM).
+Elixir module that implements the Block Decomposition Method (BDM) developed by Hector Zenil et al to approximate the algorithmic complexity of datasets by decomposing them into smaller blocks and using precomputed CTM (Coding Theorem Method) values.
 
 For more details:
 * Hector Zenil, Santiago Hernández-Orozco, Narsis A. Kiani, Fernando Soler-Toscano, Antonio Rueda-Toicen 2018 A Decomposition Method for Global Evaluation of Shannon Entropy and Local Estimations of Algorithmic Complexity. arXiv:1609.00110
@@ -53,10 +53,10 @@ The CTM values follow the principle that:
 
 ## Main Functions
 
-* BDM.new/4 - Creates a new BDM analysis structure
-* compute/4 - Computes the BDM complexity of a dataset
-* perturbation_analysis/4 - Performs perturbation analysis to identify complexity-driving elements
-* normalize/2 - Normalizes BDM value between 0 and 1
+* *BDM.new/4* - Creates a new BDM analysis structure
+* *compute/4* - Computes the BDM complexity of a dataset
+* *perturbation_analysis/4* - Performs perturbation analysis to identify complexity-driving elements
+* *normalize/2* - Normalizes BDM value between 0 and 1
 
 ## Usage
 
