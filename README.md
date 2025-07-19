@@ -20,7 +20,7 @@ end
 
 * Supports both 1D (binary strings) and 2D (binary matrices) data
 * Three boundary conditions: :ignore, :recursive, and :correlated
-* Proper BDM formula implementation: CTM(block) + log₂(count)
+* Proper BDM formula implementation: $CTM(block) + log_2(count)$
 
 ### CTM Lookup Tables
 
