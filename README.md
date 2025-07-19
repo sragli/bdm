@@ -105,12 +105,14 @@ For each unique slice created during decomposition, the method looks up the prec
 Step 4: Aggregation
 The CTM values for slices can be aggregated back to a global estimate of Kolmogorov complexity for the entire object using the BDM formula:
 
+$$
 BDM(X) = Σᵢ CTM(sᵢ) + log₂(nᵢ)
+$$
 
 where:
 
 * i indexes the set of all unique slices
-* CTM(sᵢ) is the complexity of slice i
+* $CTM(sᵢ)$ is the complexity of slice i
 * nᵢ is the number of occurrences of slice i
 
 ### Boundary Conditions
