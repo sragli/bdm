@@ -1,5 +1,18 @@
 # Block Decomposition Method (BDM) LiveBook
 
+```elixir
+Mix.install([
+  {:nx, "~> 0.6"},
+  {:kino, "~> 0.11"},
+  {:explorer, "~> 0.7"},
+  {:vega_lite, "~> 0.1"},
+  {:kino_vega_lite, "~> 0.1"},
+  {:bdm, path: __DIR__}
+])
+
+alias VegaLite, as: Vl
+```
+
 ## Introduction
 
 The Block Decomposition Method (BDM) is a computational approach developed by Hector Zenil and colleagues to approximate the algorithmic complexity of datasets. This method extends the Coding Theorem Method (CTM) to handle larger datasets by decomposing them into smaller blocks and aggregating their complexities.
@@ -14,41 +27,23 @@ Algorithmic complexity (also known as Kolmogorov complexity) measures the length
 
 * **Coding Theorem Method (CTM)**: Uses precomputed output frequency distributions from Turing machines
 * **Block Decomposition**: Breaks large datasets into manageable blocks
-* **Algorithmic Probability**: Theoretical foundation based on Solomonoff-Levin theory
-
-## Installation and Setup
-
-```elixir
-Mix.install([
-  {:nx, "~> 0.6"},
-  {:kino, "~> 0.11"},
-  {:explorer, "~> 0.7"},
-  {:vega_lite, "~> 0.1"},
-  {:kino_vega_lite, "~> 0.1"},
-  {:bdm, path: __DIR__}
-])
-
-alias VegaLite, as: Vl
-```
+* **Algorithmic Probability**: Theoretical foundation based on Solomonoff-Levin theory. The algorithmic probability of an object x is the probability AP of a binary computer program p producing x by chance running on a Turing-complete computer language L and halting.
 
 ## Interactive Examples
 
 ### Example 1: Simple Binary Sequences
 
 ```elixir
-# Create different types of binary sequences
 random_seq = for _ <- 1..30, do: Enum.random([0, 1])
 ordered_seq = List.duplicate([0, 1], 15) |> List.flatten()
 constant_seq = List.duplicate(0, 30)
 
-# Calculate BDM for each sequence
 bdm = BDM.new(1, 2)
 
 random_bdm = BDM.compute(bdm, random_seq, 3, :ignore)
 ordered_bdm = BDM.compute(bdm, ordered_seq, 3, :ignore)
 constant_bdm = BDM.compute(bdm, constant_seq, 3, :ignore)
 
-# Display the sequences
 Kino.Layout.grid([
   Kino.Text.new("Random: #{inspect(random_seq)}, BDM: #{random_bdm}"),
   Kino.Text.new("Ordered: #{inspect(ordered_seq)}, BDM: #{ordered_bdm}"),
@@ -85,7 +80,6 @@ defmodule TestData do
   end
 end
 
-# Generate different 2D patterns
 patterns = %{
   random: TestData.create_2d_pattern(:random, 8),
   checkerboard: TestData.create_2d_pattern(:checkerboard, 8),
@@ -151,7 +145,6 @@ end
 ```elixir
 bdm = BDM.new(1, 2)
 
-# Create data for visualization
 sequence_lengths = [10, 20, 30, 40, 50]
 complexity_data = 
   for len <- sequence_lengths do
@@ -167,7 +160,6 @@ complexity_data =
     }
   end
 
-# Transform data for plotting
 plot_data = 
   complexity_data
   |> Enum.flat_map(fn row ->
@@ -178,7 +170,6 @@ plot_data =
     ]
   end)
 
-# Create visualization
 Vl.new(width: 600, height: 400)
 |> Vl.data_from_values(plot_data)
 |> Vl.mark(:line, point: true)
@@ -193,8 +184,6 @@ Vl.new(width: 600, height: 400)
 ### Block Size Analysis
 
 ```elixir
-bdm = BDM.new(1, 2)
-
 # Analyze how block size affects BDM estimation
 test_sequence = for _ <- 1..100, do: Enum.random([0, 1])
 
@@ -329,7 +318,6 @@ Vl.new(width: 600, height: 400, title: "Cellular Automata Evolution Complexity")
 ### Memory and Time Complexity
 
 ```elixir
-# Benchmark BDM calculation time
 defmodule Benchmark do
   def time_function(func) do
     start_time = System.monotonic_time(:millisecond)
@@ -359,5 +347,251 @@ Kino.DataTable.new(
   keys: ["Length", "Time (ms)", "BDM"],
   name: "Performance Analysis"
 )
+```
 
+## Perturbation Analysis
+
+```elixir
+alias BDM.PerturbationAnalysis
+```
+
+### Understanding Sensitivity to Changes
+
+Perturbation analysis reveals how robust BDM complexity estimates are to small changes in the data. This is crucial for understanding the stability of complexity measures and identifying critical structures.
+
+<!-- livebook:{"break_markdown":true} -->
+
+### Interactive Perturbation Visualization
+
+<!-- livebook:{"break_markdown":true} -->
+
+Create test patterns for perturbation analysis and Analyze sensitivity for each pattern:
+
+```elixir
+test_patterns = %{
+  structured: [0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1],
+  random: Enum.take(Stream.repeatedly(fn -> Enum.random([0, 1]) end), 16),
+  mostly_zeros: [0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0],
+  clustered: [1, 1, 1, 1, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0]
+}
+
+sensitivity_analyses = 
+  for {name, pattern} <- test_patterns do
+    sensitivity_profile = PerturbationAnalysis.sensitivity_profile(bdm, pattern, 3)
+    {name, pattern, sensitivity_profile}
+  end
+
+sensitivity_data =
+  for {name, _, profile} <- sensitivity_analyses do
+    max_sensitivity = profile |> Enum.map(&(&1.sensitivity)) |> Enum.max()
+    avg_sensitivity = profile |> Enum.map(&(&1.sensitivity)) |> Enum.sum() |> Kernel./(length(profile))
+
+    %{
+      "Pattern" => name,
+      "Max sensitivity" => Float.round(max_sensitivity, 3),
+      "Avg sensitivity" => Float.round(avg_sensitivity, 3)
+    }
+  end
+
+Kino.DataTable.new(
+  sensitivity_data,
+  name: "Sensitivity Analysis",
+  keys: ["Pattern", "Max sensitivity", "Avg sensitivity"]
+)
+```
+
+### Noise Level Analysis
+
+Analyze how different noise levels affect complexity:
+
+```elixir
+noise_levels = [0.05, 0.1, 0.2, 0.3, 0.4, 0.5]
+base_pattern = [0, 1, 0, 1, 0, 1, 0, 1] |> List.duplicate(4) |> List.flatten()
+
+noise_analysis_data = 
+  for noise_level <- noise_levels do
+    # Generate multiple perturbations at this noise level
+    perturbations = PerturbationAnalysis.random_perturbations(base_pattern, 20, noise_level)
+    {original_bdm, results} = PerturbationAnalysis.calculate_perturbation_effects(bdm, base_pattern, perturbations)
+    
+    # Calculate statistics
+    delta_bdms = Enum.map(results, &(&1.delta_bdm))
+    mean_delta = Enum.sum(delta_bdms) / length(delta_bdms)
+    std_delta = :math.sqrt(Enum.sum(Enum.map(delta_bdms, fn x -> (x - mean_delta) * (x - mean_delta) end)) / length(delta_bdms))
+    
+    %{
+      "Noise%" => trunc(noise_level * 100),
+      "BDM" => Float.round(original_bdm, 2),
+      "Δ" => Float.round(std_delta, 2),
+      "Mean Δ" => Float.round(mean_delta, 2),
+      "Min Δ" => Float.round(Enum.min(delta_bdms), 2),
+      "Max Δ" => Float.round(Enum.max(delta_bdms), 2)
+    }
+  end
+
+Kino.DataTable.new(
+  noise_analysis_data,
+  name: "Noise Level Analysis",
+  keys: ["Noise%", "BDM", "Δ", "Mean Δ", "Min Δ", "Max Δ"]
+)
+```
+
+### Advanced Perturbation Visualizations
+
+```elixir
+visualization_data = 
+  for {name, _pattern, profile} <- sensitivity_analyses do
+    # Add pattern name to each data point
+    profile
+    |> Enum.map(fn point ->
+      Map.put(point, :pattern, to_string(name))
+    end)
+  end
+  |> List.flatten()
+
+# Sensitivity heatmap data
+heatmap_data = 
+  for {name, pattern, profile} <- sensitivity_analyses do
+    profile
+    |> Enum.with_index()
+    |> Enum.map(fn {point, _} ->
+      %{
+        pattern: to_string(name),
+        position: point.position,
+        sensitivity: point.sensitivity,
+        original_bit: Enum.at(pattern, point.position)
+      }
+    end)
+  end
+  |> List.flatten()
+
+# Sensitivity comparison chart
+Vl.new(width: 700, height: 400, title: "Position Sensitivity Analysis")
+|> Vl.data_from_values(visualization_data)
+|> Vl.mark(:line, point: true, stroke_width: 2)
+|> Vl.encode_field(:x, "position", type: :quantitative, title: "Bit Position")
+|> Vl.encode_field(:y, "sensitivity", type: :quantitative, title: "Sensitivity (|ΔBDM|)")
+|> Vl.encode_field(:color, "pattern", type: :nominal, title: "Pattern Type")
+|> Vl.encode_field(:stroke_dash, "pattern", type: :nominal)
+```
+
+Noise level impact visualization:
+
+```elixir
+noise_viz_data = 
+  noise_analysis_data
+  |> Enum.flat_map(fn result ->
+    noise_level = Map.get(result, "Noise%")
+    [
+      %{noise_level: noise_level, value: Map.get(result, "Mean Δ"), measure: "Mean Change"},
+      %{noise_level: noise_level, value: Map.get(result, "Δ"), measure: "Std Deviation"},
+      %{noise_level: noise_level, value: Map.get(result, "Max Δ"), measure: "Max Change"}
+    ]
+  end)
+
+Vl.new(width: 600, height: 400, title: "BDM Response to Noise Levels")
+|> Vl.data_from_values(noise_viz_data)
+|> Vl.mark(:line, point: true)
+|> Vl.encode_field(:x, "noise_level", type: :quantitative, title: "Noise Level (%)")
+|> Vl.encode_field(:y, "value", type: :quantitative, title: "BDM Change")
+|> Vl.encode_field(:color, "measure", type: :nominal, title: "Measure")
+|> Vl.config(legend: [orient: "top"])
+```
+
+### Critical Point Detection
+
+<!-- livebook:{"break_markdown":true} -->
+
+Analyze critical points for structured pattern:
+
+```elixir
+structured_pattern = [0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1]
+sensitivity_profile = PerturbationAnalysis.sensitivity_profile(bdm, structured_pattern)
+critical_points = PerturbationAnalysis.detect_critical_positions(sensitivity_profile, 0.5)
+
+critical_point_data =
+  for point <- Enum.take(critical_points, 5) do
+    %{
+      "Position" => point.position,
+      "Sensitivity" => Float.round(point.sensitivity, 3),
+      "Relative" => Float.round(point.relative_sensitivity, 3)
+    }
+end
+
+Kino.DataTable.new(
+  critical_point_data,
+  name: "Critical Points Analysis",
+  keys: ["Position", "Sensitivity", "Relative"]
+)
+```
+
+### Perturbation Phase Space
+
+<!-- livebook:{"break_markdown":true} -->
+
+Phase space visualization showing relationship between original complexity and perturbation effects:
+
+```elixir
+phase_space_data = 
+  for {name, pattern, _} <- sensitivity_analyses do
+    original_bdm = BDM.compute(bdm, pattern, 3, :ignore)
+    perturbations = PerturbationAnalysis.single_bit_perturbations(pattern)
+    
+    perturbations
+    |> Enum.with_index()
+    |> Enum.map(fn {perturbed, index} ->
+      perturbed_bdm =  BDM.compute(bdm, perturbed, 3, :ignore)
+      hamming_distance = Enum.zip(pattern, perturbed) 
+                        |> Enum.count(fn {a, b} -> a != b end)
+      
+      %{
+        pattern: to_string(name),
+        original_bdm: original_bdm,
+        perturbed_bdm: perturbed_bdm,
+        delta_bdm: perturbed_bdm - original_bdm,
+        hamming_distance: hamming_distance,
+        position: index
+      }
+    end)
+  end
+  |> List.flatten()
+
+Vl.new(width: 600, height: 400, title: "Perturbation Phase Space")
+|> Vl.data_from_values(phase_space_data)
+|> Vl.mark(:circle, size: 60, opacity: 0.7)
+|> Vl.encode_field(:x, "original_bdm", type: :quantitative, title: "Original BDM")
+|> Vl.encode_field(:y, "perturbed_bdm", type: :quantitative, title: "Perturbed BDM")
+|> Vl.encode_field(:color, "pattern", type: :nominal, title: "Pattern Type")
+|> Vl.encode_field(:size, "hamming_distance", type: :quantitative, title: "Hamming Distance")
+```
+
+### Robustness Analysis
+
+<!-- livebook:{"break_markdown":true} -->
+
+Compare robustness across different pattern types:
+
+```elixir
+robustness_comparison = 
+  for {name, pattern} <- test_patterns do
+    analysis = PerturbationAnalysis.stability_coefficient(bdm, pattern, 30, 0.15)
+    Map.put(analysis, :pattern, name)
+  end
+
+robustness_viz_data = 
+  robustness_comparison
+  |> Enum.map(fn result ->
+    %{
+      pattern: to_string(result.pattern),
+      stability_score: result.stability_score,
+      coefficient_variation: result.coefficient_of_variation
+    }
+  end)
+
+Vl.new(width: 500, height: 300, title: "Pattern Robustness Analysis")
+|> Vl.data_from_values(robustness_viz_data)
+|> Vl.mark(:bar)
+|> Vl.encode_field(:x, "pattern", type: :nominal, title: "Pattern Type")
+|> Vl.encode_field(:y, "stability_score", type: :quantitative, title: "Stability Score")
+|> Vl.encode_field(:color, "pattern", type: :nominal)
 ```

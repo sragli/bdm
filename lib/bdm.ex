@@ -220,8 +220,15 @@ defmodule BDM do
 
   @doc """
   Performs perturbation analysis to identify complexity-driving elements.
+
+  Returns the perturbation effect (complexity after perturbation - original complexity) for all elements of the input data.
   """
-  @spec perturbation_analysis(t(), binary_string() | binary_matrix(), integer(), boundary_condition()) ::
+  @spec perturbation_analysis(
+          t(),
+          binary_string() | binary_matrix(),
+          integer(),
+          boundary_condition()
+        ) ::
           list({integer(), float()})
   def perturbation_analysis(%__MODULE__{ndim: 1} = bdm, data, block_size, boundary) do
     original_complexity = compute(bdm, data, block_size, boundary)
