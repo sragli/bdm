@@ -250,9 +250,10 @@ Kino.DataTable.new(
 
 ```elixir
 defmodule CellularAutomata do
-  @doc """
+  @moduledoc """
   Implementation of Rule 30 cellular automaton.
   """
+  
   def rule_30(initial_state, steps) do
     evolve(initial_state, steps, &rule_30_step/1)
   end
@@ -319,7 +320,7 @@ Vl.new(width: 600, height: 400, title: "Cellular Automata Evolution Complexity")
 
 ```elixir
 defmodule Benchmark do
-  def time_function(func) do
+  def time(func) do
     start_time = System.monotonic_time(:millisecond)
     result = func.()
     end_time = System.monotonic_time(:millisecond)
@@ -327,26 +328,23 @@ defmodule Benchmark do
   end
 end
 
-# Test with different sequence lengths
-sequence_lengths = [100, 500, 1000, 2000]
-
 bdm = BDM.new(1, 2)
 
-data = for len <- sequence_lengths do
+data = for len <- 10000..100000//5000 do
   test_seq = for _ <- 1..len, do: Enum.random([0, 1])
-  {bdm_val, time_ms} = Benchmark.time_function(fn -> BDM.compute(bdm, test_seq, 2, :ignore) end)
+  {_, time_ms} = Benchmark.time(fn -> BDM.compute(bdm, test_seq, 2, :ignore) end)
   %{
-    "Length" => len,
-    "Time (ms)" => time_ms,
-    "BDM" =>Float.round(bdm_val, 2)
+    "l" => len,
+    "t" => time_ms
   }
 end
 
-Kino.DataTable.new(
-  data,
-  keys: ["Length", "Time (ms)", "BDM"],
-  name: "Performance Analysis"
-)
+Vl.new(width: 600, height: 400, title: "Performance Analysis")
+|> Vl.data_from_values(data)
+|> Vl.mark(:line, point: true)
+|> Vl.encode_field(:x, "l", type: :quantitative, title: "Dataset Length")
+|> Vl.encode_field(:y, "t", type: :quantitative, title: "Time (ms)")
+|> Vl.config(legend: [orient: "top"])
 ```
 
 ## Perturbation Analysis
