@@ -37,6 +37,9 @@ end
 
 * Block Entropy: For comparison with BDM complexity
 * Perturbation Analysis: Identifies complexity-driving elements
+  * Single-bit flip perturbations
+  * Random noise perturbations with configurable noise levels
+  * Comprehensive sensitivity analysis
 * Normalization: Scales BDM values between 0 and 1
 
 ### Realistic Complexity Values

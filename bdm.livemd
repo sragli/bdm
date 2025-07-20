@@ -349,6 +349,10 @@ Vl.new(width: 600, height: 400, title: "Performance Analysis")
 
 ## Perturbation Analysis
 
+* Position Sensitivity Chart: Shows how sensitive each bit position is to perturbation across different pattern types (structured, random, mostly zeros, clustered)
+* Noise Level Impact Visualization: Demonstrates how different noise levels (5% to 50%) affect BDM complexity, showing mean change, standard deviation, and maximum changes
+* Perturbation Phase Space: A scatter plot showing the relationship between original and perturbed BDM values, with point size indicating Hamming distance
+
 ```elixir
 alias BDM.PerturbationAnalysis
 ```
@@ -363,7 +367,7 @@ Perturbation analysis reveals how robust BDM complexity estimates are to small c
 
 <!-- livebook:{"break_markdown":true} -->
 
-Create test patterns for perturbation analysis and Analyze sensitivity for each pattern:
+Create test patterns for perturbation analysis and analyze sensitivity for each pattern:
 
 ```elixir
 test_patterns = %{
@@ -455,7 +459,7 @@ Vl.new(width: 700, height: 400, title: "Position Sensitivity Analysis")
 |> Vl.encode_field(:stroke_dash, "pattern", type: :nominal)
 ```
 
-Noise level impact visualization:
+Noise level impact (how complexity changes scale with perturbation intensity) visualization:
 
 ```elixir
 viz_data = 
@@ -482,7 +486,7 @@ Vl.new(width: 600, height: 400, title: "BDM Response to Noise Levels")
 
 <!-- livebook:{"break_markdown":true} -->
 
-Analyze critical points for structured pattern:
+Analyze critical points (where structural changes have maximum impact) for structured pattern:
 
 ```elixir
 structured_pattern = [0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1]
@@ -549,7 +553,7 @@ Vl.new(width: 600, height: 400, title: "Perturbation Phase Space")
 
 <!-- livebook:{"break_markdown":true} -->
 
-Compare robustness across different pattern types:
+Compare robustness (which pattern types are most robust to perturbations) across different pattern types:
 
 ```elixir
 robustness_comparison = 
