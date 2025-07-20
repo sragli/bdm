@@ -31,21 +31,21 @@ The Block Decomposition Method (BDM) is a computational approach developed by He
 ### Example 1: Simple Binary Sequences
 
 ```elixir
-random_seq = for _ <- 1..30, do: Enum.random([0, 1])
-ordered_seq = List.duplicate([0, 1], 15) |> List.flatten()
-constant_seq = List.duplicate(0, 30)
+random_seq = for _ <- 1..50, do: Enum.random([0, 1])
+ordered_seq = List.duplicate([0, 1], 25) |> List.flatten()
+constant_seq = List.duplicate(0, 50)
 
 bdm = BDM.new(1, 2, 3, :ignore)
 
-random_bdm = BDM.compute(bdm, random_seq)
-ordered_bdm = BDM.compute(bdm, ordered_seq)
-constant_bdm = BDM.compute(bdm, constant_seq)
-
-Kino.Layout.grid([
-  Kino.Text.new("Random: #{inspect(random_seq)}, BDM: #{random_bdm}"),
-  Kino.Text.new("Ordered: #{inspect(ordered_seq)}, BDM: #{ordered_bdm}"),
-  Kino.Text.new("Constant: #{inspect(constant_seq)}, BDM: #{constant_bdm}")
-])
+Kino.DataTable.new(
+  [
+    %{"Pattern" => "random", "BDM" => BDM.compute(bdm, random_seq)},
+    %{"Pattern" => "ordered", "BDM" => BDM.compute(bdm, ordered_seq)},
+    %{"Pattern" => "constant", "BDM" => BDM.compute(bdm, constant_seq)}
+  ],
+  keys: ["Pattern", "BDM"],
+  name: "BDM of binary sequences"
+)
 ```
 
 ### Example 2: 2D Pattern Analysis
@@ -103,10 +103,7 @@ defmodule Visualizer do
     |> Vl.mark(:rect)
     |> Vl.encode_field(:x, "x", type: :ordinal, title: "Column")
     |> Vl.encode_field(:y, "y", type: :ordinal, title: "Row", sort: :descending)
-    |> Vl.encode_field(:color, "value", 
-        type: :quantitative, 
-        scale: [scheme: "viridis"],
-        title: "Value")
+    |> Vl.encode_field(:color, "value", type: :quantitative, scale: [scheme: "viridis"], title: "Value")
   end
 end
 
@@ -123,18 +120,18 @@ Calculate BDM for each pattern:
 ```elixir
 bdm = BDM.new(2, 2, 2, :ignore)
 
-bdm_results = 
+pattern_viz = 
   patterns
   |> Enum.map(fn {name, pattern} ->
     bdm_value = BDM.compute(bdm, pattern)
-    {name, bdm_value}
+    %{"Pattern" => Atom.to_string(name), "BDM" => bdm_value}
   end)
-  |> Enum.into(%{})
 
-IO.puts("2D Pattern BDM Results:")
-for {name, bdm} <- bdm_results do
-  IO.puts("#{name}: #{bdm}")
-end
+Kino.DataTable.new(
+  pattern_viz,
+  keys: ["Pattern", "BDM"],
+  name: "BDM of 2D patterns"
+)
 ```
 
 ### Example 3: Interactive Visualization
@@ -225,10 +222,10 @@ bdm = BDM.new(1, 2, 3, :ignore)
 
 # Compare BDM with Shannon entropy
 comparison_data = [
-  {List.duplicate(0, 50), "All zeros"},
-  {for(_ <- 1..50, do: Enum.random([0, 1])), "Random"},
-  {List.duplicate([0, 1], 25) |> List.flatten(), "Alternating"},
-  {[0, 0, 1] |> List.duplicate(16) |> List.flatten() |> Enum.take(50), "Pattern 001"}
+  {constant_seq, "constant"},
+  {random_seq, "random"},
+  {ordered_seq, "alternating"},
+  {[0, 0, 1] |> List.duplicate(16) |> List.flatten() |> Enum.take(50), "pattern 001"}
 ]
 
 data = for {sequence, name} <- comparison_data do
@@ -398,7 +395,7 @@ sensitivity_data =
       |> Kernel./(length(profile))
 
     %{
-      "Pattern" => name,
+      "Pattern" => Atom.to_string(name),
       "Max sensitivity" => Float.round(max_sensitivity, 3),
       "Avg sensitivity" => Float.round(avg_sensitivity, 3)
     }
