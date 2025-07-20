@@ -34,6 +34,7 @@ The Block Decomposition Method (BDM) is a computational approach developed by He
 random_seq = for _ <- 1..200, do: Enum.random([0, 1])
 ordered_seq = List.duplicate([0, 1], 100) |> List.flatten()
 constant_seq = List.duplicate(0, 200)
+pattern_seq = [0, 0, 1] |> List.duplicate(70) |> List.flatten() |> Enum.take(200)
 
 bdm = BDM.new(1, 2, 3, :ignore)
 
@@ -41,7 +42,8 @@ Kino.DataTable.new(
   [
     %{"Pattern" => "random", "BDM" => BDM.compute(bdm, random_seq)},
     %{"Pattern" => "ordered", "BDM" => BDM.compute(bdm, ordered_seq)},
-    %{"Pattern" => "constant", "BDM" => BDM.compute(bdm, constant_seq)}
+    %{"Pattern" => "constant", "BDM" => BDM.compute(bdm, constant_seq)},
+    %{"Pattern" => "pattern", "BDM" => BDM.compute(bdm, pattern_seq)}
   ],
   keys: ["Pattern", "BDM"],
   name: "BDM of binary sequences"
@@ -189,7 +191,7 @@ block_sizes = [2, 3]
 block_analysis_viz = 
   for block_size <- block_sizes do
     bdm = BDM.new(1, 2, block_size, :ignore)
-    bdm_value = BDM.compute(bdm, random_seq)
+    bdm_value = BDM.compute(bdm, pattern_seq)
     %{"Block Size" => block_size, "BDM" => bdm_value}
   end
 
@@ -275,12 +277,11 @@ Comparison:
 ```elixir
 bdm = BDM.new(1, 2, 3, :ignore)
 
-# Compare BDM with Shannon entropy
 comparison_data = [
   {constant_seq, "constant"},
   {random_seq, "random"},
   {ordered_seq, "alternating"},
-  {[0, 0, 1] |> List.duplicate(16) |> List.flatten() |> Enum.take(50), "pattern 001"}
+  {pattern_seq, "pattern 001"}
 ]
 
 data_viz =
