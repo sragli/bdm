@@ -160,7 +160,7 @@ complexity_data =
     }
   end
 
-plot_data = 
+viz_data = 
   complexity_data
   |> Enum.flat_map(fn row ->
     [
@@ -171,7 +171,7 @@ plot_data =
   end)
 
 Vl.new(width: 600, height: 400)
-|> Vl.data_from_values(plot_data)
+|> Vl.data_from_values(viz_data)
 |> Vl.mark(:line, point: true)
 |> Vl.encode_field(:x, "length", type: :quantitative, title: "Sequence Length")
 |> Vl.encode_field(:y, "complexity", type: :quantitative, title: "BDM Complexity")
@@ -300,14 +300,14 @@ evolution_complexity =
     %{step: step, complexity: bdm_val}
   end)
 
-plot_data = 
+viz_data = 
   evolution_complexity
   |> Enum.map(fn row ->
       %{step: row.step, complexity: Float.round(row.complexity, 2)}
   end)
 
 Vl.new(width: 600, height: 400, title: "Cellular Automata Evolution Complexity")
-|> Vl.data_from_values(plot_data)
+|> Vl.data_from_values(viz_data)
 |> Vl.mark(:line, point: true)
 |> Vl.encode_field(:x, "step", type: :quantitative, title: "Step")
 |> Vl.encode_field(:y, "complexity", type: :quantitative, title: "BDM Complexity")
@@ -330,7 +330,7 @@ end
 
 bdm = BDM.new(1, 2)
 
-data = for len <- 10000..100000//5000 do
+viz_data = for len <- 10000..100000//5000 do
   test_seq = for _ <- 1..len, do: Enum.random([0, 1])
   {_, time_ms} = Benchmark.time(fn -> BDM.compute(bdm, test_seq, 2, :ignore) end)
   %{
@@ -340,7 +340,7 @@ data = for len <- 10000..100000//5000 do
 end
 
 Vl.new(width: 600, height: 400, title: "Performance Analysis")
-|> Vl.data_from_values(data)
+|> Vl.data_from_values(viz_data)
 |> Vl.mark(:line, point: true)
 |> Vl.encode_field(:x, "l", type: :quantitative, title: "Dataset Length")
 |> Vl.encode_field(:y, "t", type: :quantitative, title: "Time (ms)")
@@ -437,9 +437,8 @@ Kino.DataTable.new(
 ### Advanced Perturbation Visualizations
 
 ```elixir
-visualization_data = 
+viz_data = 
   for {name, _pattern, profile} <- sensitivity_analyses do
-    # Add pattern name to each data point
     profile
     |> Enum.map(fn point ->
       Map.put(point, :pattern, to_string(name))
@@ -447,25 +446,8 @@ visualization_data =
   end
   |> List.flatten()
 
-# Sensitivity heatmap data
-heatmap_data = 
-  for {name, pattern, profile} <- sensitivity_analyses do
-    profile
-    |> Enum.with_index()
-    |> Enum.map(fn {point, _} ->
-      %{
-        pattern: to_string(name),
-        position: point.position,
-        sensitivity: point.sensitivity,
-        original_bit: Enum.at(pattern, point.position)
-      }
-    end)
-  end
-  |> List.flatten()
-
-# Sensitivity comparison chart
 Vl.new(width: 700, height: 400, title: "Position Sensitivity Analysis")
-|> Vl.data_from_values(visualization_data)
+|> Vl.data_from_values(viz_data)
 |> Vl.mark(:line, point: true, stroke_width: 2)
 |> Vl.encode_field(:x, "position", type: :quantitative, title: "Bit Position")
 |> Vl.encode_field(:y, "sensitivity", type: :quantitative, title: "Sensitivity (|ΔBDM|)")
@@ -476,7 +458,7 @@ Vl.new(width: 700, height: 400, title: "Position Sensitivity Analysis")
 Noise level impact visualization:
 
 ```elixir
-noise_viz_data = 
+viz_data = 
   noise_analysis_data
   |> Enum.flat_map(fn result ->
     noise_level = Map.get(result, "Noise%")
@@ -488,7 +470,7 @@ noise_viz_data =
   end)
 
 Vl.new(width: 600, height: 400, title: "BDM Response to Noise Levels")
-|> Vl.data_from_values(noise_viz_data)
+|> Vl.data_from_values(viz_data)
 |> Vl.mark(:line, point: true)
 |> Vl.encode_field(:x, "noise_level", type: :quantitative, title: "Noise Level (%)")
 |> Vl.encode_field(:y, "value", type: :quantitative, title: "BDM Change")
@@ -530,7 +512,7 @@ Kino.DataTable.new(
 Phase space visualization showing relationship between original complexity and perturbation effects:
 
 ```elixir
-phase_space_data = 
+viz_data = 
   for {name, pattern, _} <- sensitivity_analyses do
     original_bdm = BDM.compute(bdm, pattern, 3, :ignore)
     perturbations = PerturbationAnalysis.single_bit_perturbations(pattern)
@@ -555,7 +537,7 @@ phase_space_data =
   |> List.flatten()
 
 Vl.new(width: 600, height: 400, title: "Perturbation Phase Space")
-|> Vl.data_from_values(phase_space_data)
+|> Vl.data_from_values(viz_data)
 |> Vl.mark(:circle, size: 60, opacity: 0.7)
 |> Vl.encode_field(:x, "original_bdm", type: :quantitative, title: "Original BDM")
 |> Vl.encode_field(:y, "perturbed_bdm", type: :quantitative, title: "Perturbed BDM")
@@ -576,7 +558,7 @@ robustness_comparison =
     Map.put(analysis, :pattern, name)
   end
 
-robustness_viz_data = 
+viz_data = 
   robustness_comparison
   |> Enum.map(fn result ->
     %{
@@ -587,7 +569,7 @@ robustness_viz_data =
   end)
 
 Vl.new(width: 500, height: 300, title: "Pattern Robustness Analysis")
-|> Vl.data_from_values(robustness_viz_data)
+|> Vl.data_from_values(viz_data)
 |> Vl.mark(:bar)
 |> Vl.encode_field(:x, "pattern", type: :nominal, title: "Pattern Type")
 |> Vl.encode_field(:y, "stability_score", type: :quantitative, title: "Stability Score")
