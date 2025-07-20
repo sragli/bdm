@@ -38,11 +38,11 @@ random_seq = for _ <- 1..30, do: Enum.random([0, 1])
 ordered_seq = List.duplicate([0, 1], 15) |> List.flatten()
 constant_seq = List.duplicate(0, 30)
 
-bdm = BDM.new(1, 2)
+bdm = BDM.new(1, 2, 3, :ignore)
 
-random_bdm = BDM.compute(bdm, random_seq, 3, :ignore)
-ordered_bdm = BDM.compute(bdm, ordered_seq, 3, :ignore)
-constant_bdm = BDM.compute(bdm, constant_seq, 3, :ignore)
+random_bdm = BDM.compute(bdm, random_seq)
+ordered_bdm = BDM.compute(bdm, ordered_seq)
+constant_bdm = BDM.compute(bdm, constant_seq)
 
 Kino.Layout.grid([
   Kino.Text.new("Random: #{inspect(random_seq)}, BDM: #{random_bdm}"),
@@ -124,12 +124,12 @@ Kino.Layout.grid([random, checkerboard, diagonal, constant], columns: 2)
 Calculate BDM for each pattern:
 
 ```elixir
-bdm = BDM.new(2, 2)
+bdm = BDM.new(2, 2, 2, :ignore)
 
 bdm_results = 
   patterns
   |> Enum.map(fn {name, pattern} ->
-    bdm_value = BDM.compute(bdm, pattern, 2, :ignore)
+    bdm_value = BDM.compute(bdm, pattern)
     {name, bdm_value}
   end)
   |> Enum.into(%{})
@@ -143,20 +143,23 @@ end
 ### Example 3: Interactive Visualization
 
 ```elixir
-bdm = BDM.new(1, 2)
+bdm = BDM.new(1, 2, 3, :ignore)
 
 sequence_lengths = [10, 20, 30, 40, 50]
 complexity_data = 
   for len <- sequence_lengths do
     random_seq = for _ <- 1..len, do: Enum.random([0, 1])
-    ordered_seq = List.duplicate([0, 1], div(len, 2)) |> List.flatten() |> Enum.take(len)
+    ordered_seq =
+      List.duplicate([0, 1], div(len, 2))
+      |> List.flatten()
+      |> Enum.take(len)
     constant_seq = List.duplicate(0, len)
     
     %{
       length: len,
-      random: BDM.compute(bdm, random_seq, 3, :ignore),
-      ordered: BDM.compute(bdm, ordered_seq, 3, :ignore),
-      constant: BDM.compute(bdm, constant_seq, 3, :ignore)
+      random: BDM.compute(bdm, random_seq),
+      ordered: BDM.compute(bdm, ordered_seq),
+      constant: BDM.compute(bdm, constant_seq)
     }
   end
 
@@ -183,14 +186,18 @@ Vl.new(width: 600, height: 400)
 
 ### Block Size Analysis
 
+<!-- livebook:{"break_markdown":true} -->
+
+Analyze how block size affects BDM estimation:
+
 ```elixir
-# Analyze how block size affects BDM estimation
 test_sequence = for _ <- 1..100, do: Enum.random([0, 1])
 
 block_sizes = [2, 3]
 block_analysis = 
   for block_size <- block_sizes do
-    bdm_value = BDM.compute(bdm, test_sequence, block_size, :ignore)
+    bdm = BDM.new(1, 2, block_size, :ignore)
+    bdm_value = BDM.compute(bdm, test_sequence)
     %{block_size: block_size, bdm_value: bdm_value}
   end
 
@@ -217,7 +224,7 @@ defmodule Entropy do
   end
 end
 
-bdm = BDM.new(1, 2)
+bdm = BDM.new(1, 2, 3, :ignore)
 
 # Compare BDM with Shannon entropy
 comparison_data = [
@@ -228,7 +235,7 @@ comparison_data = [
 ]
 
 data = for {sequence, name} <- comparison_data do
-  bdm_val = BDM.compute(bdm, sequence, 3, :ignore)
+  bdm_val = BDM.compute(bdm, sequence)
   entropy_val = Entropy.shannon_entropy(sequence)
   %{
     "Pattern" => name,
@@ -289,14 +296,14 @@ end
 initial_state = [0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0]
 evolution = CellularAutomata.rule_30(initial_state, 20)
 
-bdm = BDM.new(1, 2)
+bdm = BDM.new(1, 2, 2, :ignore)
 
 # Calculate BDM for each step
 evolution_complexity = 
   evolution
   |> Enum.with_index()
   |> Enum.map(fn {state, step} ->
-    bdm_val = BDM.compute(bdm, state, 2, :ignore)
+    bdm_val = BDM.compute(bdm, state)
     %{step: step, complexity: bdm_val}
   end)
 
@@ -328,11 +335,11 @@ defmodule Benchmark do
   end
 end
 
-bdm = BDM.new(1, 2)
+bdm = BDM.new(1, 2, 2, :ignore)
 
 viz_data = for len <- 10000..100000//5000 do
   test_seq = for _ <- 1..len, do: Enum.random([0, 1])
-  {_, time_ms} = Benchmark.time(fn -> BDM.compute(bdm, test_seq, 2, :ignore) end)
+  {_, time_ms} = Benchmark.time(fn -> BDM.compute(bdm, test_seq) end)
   %{
     "l" => len,
     "t" => time_ms
@@ -367,26 +374,35 @@ Perturbation analysis reveals how robust BDM complexity estimates are to small c
 
 <!-- livebook:{"break_markdown":true} -->
 
-Create test patterns for perturbation analysis and analyze sensitivity for each pattern:
+Creating test patterns for perturbation analysis and analyzing sensitivity for each pattern:
 
 ```elixir
-test_patterns = %{
+test_patterns_1d = %{
   structured: [0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1],
   random: Enum.take(Stream.repeatedly(fn -> Enum.random([0, 1]) end), 16),
   mostly_zeros: [0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0],
   clustered: [1, 1, 1, 1, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0]
 }
 
+bdm_1d = BDM.new(1, 2, 3, :ignore)
+
 sensitivity_analyses = 
-  for {name, pattern} <- test_patterns do
-    sensitivity_profile = PerturbationAnalysis.sensitivity_profile(bdm, pattern, 3)
+  for {name, pattern} <- test_patterns_1d do
+    sensitivity_profile = PerturbationAnalysis.sensitivity_profile(bdm_1d, pattern)
     {name, pattern, sensitivity_profile}
   end
 
 sensitivity_data =
   for {name, _, profile} <- sensitivity_analyses do
-    max_sensitivity = profile |> Enum.map(&(&1.sensitivity)) |> Enum.max()
-    avg_sensitivity = profile |> Enum.map(&(&1.sensitivity)) |> Enum.sum() |> Kernel./(length(profile))
+    max_sensitivity =
+      profile
+      |> Enum.map(&(&1.sensitivity))
+      |> Enum.max()
+    avg_sensitivity =
+      profile
+      |> Enum.map(&(&1.sensitivity))
+      |> Enum.sum()
+      |> Kernel./(length(profile))
 
     %{
       "Pattern" => name,
@@ -402,6 +418,25 @@ Kino.DataTable.new(
 )
 ```
 
+```elixir
+viz_data = 
+  for {name, _pattern, profile} <- sensitivity_analyses do
+    profile
+    |> Enum.map(fn point ->
+      Map.put(point, :pattern, to_string(name))
+    end)
+  end
+  |> List.flatten()
+
+Vl.new(width: 700, height: 400, title: "Position Sensitivity Analysis")
+|> Vl.data_from_values(viz_data)
+|> Vl.mark(:line, point: true, stroke_width: 2)
+|> Vl.encode_field(:x, "position", type: :quantitative, title: "Bit Position")
+|> Vl.encode_field(:y, "sensitivity", type: :quantitative, title: "Sensitivity (|ΔBDM|)")
+|> Vl.encode_field(:color, "pattern", type: :nominal, title: "Pattern Type")
+|> Vl.encode_field(:stroke_dash, "pattern", type: :nominal)
+```
+
 ### Noise Level Analysis
 
 Analyze how different noise levels affect complexity:
@@ -410,11 +445,13 @@ Analyze how different noise levels affect complexity:
 noise_levels = [0.05, 0.1, 0.2, 0.3, 0.4, 0.5]
 base_pattern = [0, 1, 0, 1, 0, 1, 0, 1] |> List.duplicate(4) |> List.flatten()
 
+bdm = BDM.new(1, 2, 3, :ignore)
+
 noise_analysis_data = 
   for noise_level <- noise_levels do
     # Generate multiple perturbations at this noise level
-    perturbations = PerturbationAnalysis.random_perturbations(base_pattern, 20, noise_level)
-    {original_bdm, results} = PerturbationAnalysis.calculate_perturbation_effects(bdm, base_pattern, perturbations, 3)
+    perturbations = PerturbationAnalysis.random_perturbations(bdm, base_pattern, 20, noise_level)
+    {original_bdm, results} = PerturbationAnalysis.calculate_perturbation_effects(bdm, base_pattern, perturbations)
     
     # Calculate statistics
     delta_bdms = Enum.map(results, &(&1.delta_bdm))
@@ -436,27 +473,6 @@ Kino.DataTable.new(
   name: "Noise Level Analysis",
   keys: ["Noise%", "BDM", "Δ", "Mean Δ", "Min Δ", "Max Δ"]
 )
-```
-
-### Advanced Perturbation Visualizations
-
-```elixir
-viz_data = 
-  for {name, _pattern, profile} <- sensitivity_analyses do
-    profile
-    |> Enum.map(fn point ->
-      Map.put(point, :pattern, to_string(name))
-    end)
-  end
-  |> List.flatten()
-
-Vl.new(width: 700, height: 400, title: "Position Sensitivity Analysis")
-|> Vl.data_from_values(viz_data)
-|> Vl.mark(:line, point: true, stroke_width: 2)
-|> Vl.encode_field(:x, "position", type: :quantitative, title: "Bit Position")
-|> Vl.encode_field(:y, "sensitivity", type: :quantitative, title: "Sensitivity (|ΔBDM|)")
-|> Vl.encode_field(:color, "pattern", type: :nominal, title: "Pattern Type")
-|> Vl.encode_field(:stroke_dash, "pattern", type: :nominal)
 ```
 
 Noise level impact (how complexity changes scale with perturbation intensity) visualization:
@@ -490,7 +506,7 @@ Analyze critical points (where structural changes have maximum impact) for struc
 
 ```elixir
 structured_pattern = [0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1]
-sensitivity_profile = PerturbationAnalysis.sensitivity_profile(bdm, structured_pattern, 3)
+sensitivity_profile = PerturbationAnalysis.sensitivity_profile(bdm, structured_pattern)
 critical_points = PerturbationAnalysis.detect_critical_positions(sensitivity_profile, 0.5)
 
 critical_point_data =
@@ -518,13 +534,13 @@ Phase space visualization showing relationship between original complexity and p
 ```elixir
 viz_data = 
   for {name, pattern, _} <- sensitivity_analyses do
-    original_bdm = BDM.compute(bdm, pattern, 3, :ignore)
-    perturbations = PerturbationAnalysis.single_bit_perturbations(pattern)
+    original_bdm = BDM.compute(bdm, pattern)
+    perturbations = PerturbationAnalysis.single_bit_perturbations(bdm, pattern)
     
     perturbations
     |> Enum.with_index()
     |> Enum.map(fn {perturbed, index} ->
-      perturbed_bdm =  BDM.compute(bdm, perturbed, 3, :ignore)
+      perturbed_bdm =  BDM.compute(bdm, perturbed)
       hamming_distance = Enum.zip(pattern, perturbed) 
                         |> Enum.count(fn {a, b} -> a != b end)
       
@@ -557,8 +573,8 @@ Compare robustness (which pattern types are most robust to perturbations) across
 
 ```elixir
 robustness_comparison = 
-  for {name, pattern} <- test_patterns do
-    analysis = PerturbationAnalysis.stability_coefficient(bdm, pattern, 3, :ignore, 30, 0.15)
+  for {name, pattern} <- test_patterns_1d do
+    analysis = PerturbationAnalysis.stability_coefficient(bdm, pattern, 30, 0.15)
     Map.put(analysis, :pattern, name)
   end
 

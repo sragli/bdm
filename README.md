@@ -50,12 +50,12 @@ The CTM values follow the principle that:
 * More random/irregular patterns have higher complexity
 * Larger patterns generally have higher base complexity
 
-## Main Functions
+## Main Modules and Functions
 
 * *BDM.new/4* - Creates a new BDM analysis structure
-* *compute/4* - Computes the BDM complexity of a dataset
-* *perturbation_analysis/4* - Performs perturbation analysis to identify complexity-driving elements
-* *normalize/2* - Normalizes BDM value between 0 and 1
+* *BDM.compute/4* - Computes the BDM complexity of a dataset
+* *BDM.PerturbationAnalysis* - Performs perturbation analysis to identify complexity-driving elements, sensitivity, critical points, stability
+* *BDMUtils.normalize/2* - Normalizes BDM value between 0 and 1
 
 ## Usage
 
@@ -73,8 +73,9 @@ large_matrix = [
 
 complexity_2x2 = BDM.compute(bdm, large_matrix, 2, :ignore)
 normalized_complexity = BDMUtils.normalize(complexity_2x2, large_matrix)
-perturbations_2x2 = BDM.perturbation_analysis(bdm, large_matrix, 2, :ignore)
 ```
+
+For more details and explanations, check the [LiveBook](bdm.livemd).
 
 ## How BDM Works
 

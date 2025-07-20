@@ -6,10 +6,16 @@ defmodule BDM.PerturbationAnalysis do
   @doc """
   Generate all possible single-bit flip perturbations of the data.
   """
-  def single_bit_perturbations(data) do
+  def single_bit_perturbations(%BDM{ndim: 1}, data) do
     for i <- 0..(length(data) - 1) do
-      data
-      |> List.update_at(i, fn bit -> 1 - bit end)
+      flip_bit_1d(data, i)
+    end
+  end
+
+  def single_bit_perturbations(%BDM{ndim: 2}, data) do
+    for {row, i} <- Enum.with_index(data),
+        {_val, j} <- Enum.with_index(row) do
+      flip_bit_2d(data, i, j)
     end
   end
 
@@ -17,30 +23,41 @@ defmodule BDM.PerturbationAnalysis do
   Generate random perturbations with specified noise level.
   noise_level: fraction of bits to flip (0.0 to 1.0)
   """
-  def random_perturbations(data, num_perturbations, noise_level) do
+  def random_perturbations(%BDM{ndim: 1}, data, num_perturbations, noise_level) do
     data_length = length(data)
     num_flips = round(data_length * noise_level)
 
     for _ <- 1..num_perturbations do
       positions = Enum.take_random(0..(data_length - 1), num_flips)
+      flip_positions_1d(data, positions)
+    end
+  end
 
-      Enum.reduce(positions, data, fn pos, acc ->
-        List.update_at(acc, pos, fn bit -> 1 - bit end)
-      end)
+  def random_perturbations(%BDM{ndim: 2}, data, num_perturbations, noise_level) do
+    data_length = length(data)
+    data_width = length(hd(data))
+    num_flips = round(data_length * noise_level)
+
+    for _ <- 1..num_perturbations do
+      positions = {
+        Enum.take_random(0..(data_width - 1), num_flips),
+        Enum.take_random(0..(data_length - 1), num_flips)
+      }
+      flip_positions_2d(data, positions)
     end
   end
 
   @doc """
   Calculate BDM for original and all perturbed versions.
   """
-  def calculate_perturbation_effects(bdm, original_data, perturbations, block_size, boundary \\ :ignore) do
-    original_bdm = BDM.compute(bdm, original_data, block_size, boundary)
+  def calculate_perturbation_effects(bdm, original_data, perturbations) do
+    original_bdm = BDM.compute(bdm, original_data)
 
     perturbation_results =
       perturbations
       |> Enum.with_index()
       |> Enum.map(fn {perturbed_data, index} ->
-        perturbed_bdm = BDM.compute(bdm, perturbed_data, block_size, boundary)
+        perturbed_bdm = BDM.compute(bdm, perturbed_data)
         delta_bdm = perturbed_bdm - original_bdm
 
         %{
@@ -58,9 +75,9 @@ defmodule BDM.PerturbationAnalysis do
   @doc """
   Create a sensitivity profile showing which positions are most sensitive to perturbation.
   """
-  def sensitivity_profile(bdm, data, block_size, boundary \\ :ignore) do
-    single_perturbations = single_bit_perturbations(data)
-    {_, results} = calculate_perturbation_effects(bdm, data, single_perturbations, block_size, boundary)
+  def sensitivity_profile(bdm, data) do
+    single_perturbations = single_bit_perturbations(bdm, data)
+    {_, results} = calculate_perturbation_effects(bdm, data, single_perturbations)
 
     results
     |> Enum.map(fn result ->
@@ -84,8 +101,8 @@ defmodule BDM.PerturbationAnalysis do
   @doc """
   Create a landscape showing cumulative effects of multi-bit perturbations.
   """
-  def perturbation_landscape(bdm, data, radius, block_size, boundary \\ :ignore) do
-    original_bdm = BDM.compute(bdm, data, block_size, boundary)
+  def perturbation_landscape(%BDM{ndim: 1} = bdm, data, radius) do
+    original_bdm = BDM.compute(bdm, data)
 
     data_length = length(data)
 
@@ -96,13 +113,13 @@ defmodule BDM.PerturbationAnalysis do
       # Try all combinations of flips in this window
       perturbation_effects =
         for num_flips <- 1..length(positions) do
-          combinations = combinations(positions, num_flips)
+          combinations = combinations_1d(positions, num_flips)
 
           # Limit for performance
           effects =
             for combination <- Enum.take(combinations, 10) do
-              perturbed_data = flip_positions(data, combination)
-              perturbed_bdm = BDM.compute(bdm, perturbed_data, block_size, boundary)
+              perturbed_data = flip_positions_1d(data, combination)
+              perturbed_bdm = BDM.compute(bdm, perturbed_data)
               perturbed_bdm - original_bdm
             end
 
@@ -114,22 +131,15 @@ defmodule BDM.PerturbationAnalysis do
     end
   end
 
-  defp combinations(_, 0), do: [[]]
-  defp combinations([], _), do: []
-
-  defp combinations([h | t], n) do
-    for(l <- combinations(t, n - 1), do: [h | l]) ++ combinations(t, n)
-  end
-
   @doc """
   Calculate stability coefficient: ratio of consistent complexity estimates.
   """
-  def stability_coefficient(bdm, data, block_size, boundary \\ :ignore, num_trials \\ 50, noise_level \\ 0.1) do
-    original_bdm = BDM.compute(bdm, data, block_size, boundary)
+  def stability_coefficient(bdm, data, num_trials \\ 50, noise_level \\ 0.1) do
+    original_bdm = BDM.compute(bdm, data)
 
-    perturbations = random_perturbations(data, num_trials, noise_level)
+    perturbations = random_perturbations(bdm, data, num_trials, noise_level)
 
-    {_, results} = calculate_perturbation_effects(bdm, data, perturbations, block_size, boundary)
+    {_, results} = calculate_perturbation_effects(bdm, data, perturbations)
 
     # Calculate coefficient of variation
     delta_bdms = Enum.map(results, &(&1.delta_bdm))
@@ -148,9 +158,36 @@ defmodule BDM.PerturbationAnalysis do
     }
   end
 
-  defp flip_positions(data, positions) do
+  defp flip_positions_1d(data, positions) do
     Enum.reduce(positions, data, fn pos, acc ->
       List.update_at(acc, pos, fn bit -> 1 - bit end)
     end)
+  end
+
+  defp flip_positions_2d(data, positions) do
+    Enum.reduce(positions, data, fn {row, col}, acc ->
+      List.update_at(acc, row, fn row_list ->
+        List.update_at(row_list, col, fn bit -> 1 - bit end)
+      end)
+    end)
+  end
+
+  @spec flip_bit_1d(BDM.binary_string(), integer()) :: BDM.binary_string()
+  defp flip_bit_1d(data, index) do
+    List.update_at(data, index, fn bit -> 1 - bit end)
+  end
+
+  @spec flip_bit_2d(BDM.binary_matrix(), integer(), integer()) :: BDM.binary_matrix()
+  defp flip_bit_2d(data, row, col) do
+    List.update_at(data, row, fn row_data ->
+      List.update_at(row_data, col, fn bit -> 1 - bit end)
+    end)
+  end
+
+  defp combinations_1d(_, 0), do: [[]]
+  defp combinations_1d([], _), do: []
+
+  defp combinations_1d([h | t], n) do
+    for(l <- combinations_1d(t, n - 1), do: [h | l]) ++ combinations_1d(t, n)
   end
 end

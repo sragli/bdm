@@ -3,11 +3,13 @@ defmodule BDM do
   Block Decomposition Method (BDM) implementation for approximating algorithmic complexity.
   """
 
-  defstruct [:ndim, :nsymbols, :ctm_data, :warn_missing]
+  defstruct [:ndim, :nsymbols, :block_size, :boundary, :ctm_data, :warn_missing]
 
   @type t :: %__MODULE__{
           ndim: 1 | 2,
           nsymbols: integer(),
+          block_size: integer(),
+          boundary: boundary_condition(),
           ctm_data: map(),
           warn_missing: boolean()
         }
@@ -167,6 +169,8 @@ defmodule BDM do
   ## Parameters
   - `ndim`: Dimensionality (1 for strings, 2 for matrices)
   - `nsymbols`: Number of symbols (typically 2 for binary)
+  - `block_size`: Size of blocks for decomposition
+  - `boundary`: Boundary condition (:ignore, :recursive, :correlated)
   - `ctm_data`: Optional custom CTM lookup table
   - `warn_missing`: Whether to warn about missing CTM values
 
@@ -174,8 +178,8 @@ defmodule BDM do
       iex> BDM.new(1, 2)
       %BDM{ndim: 1, nsymbols: 2, ctm_data: ..., warn_missing: true}
   """
-  @spec new(integer(), integer(), map() | nil, boolean()) :: t()
-  def new(ndim, nsymbols, ctm_data \\ nil, warn_missing \\ true) do
+  @spec new(integer(), integer(), integer(), boundary_condition(), map() | nil, boolean()) :: t()
+  def new(ndim, nsymbols, block_size, boundary \\ :ignore, ctm_data \\ nil, warn_missing \\ true) do
     default_ctm =
       case ndim do
         1 -> @default_ctm_1d
@@ -185,6 +189,8 @@ defmodule BDM do
     %__MODULE__{
       ndim: ndim,
       nsymbols: nsymbols,
+      block_size: block_size,
+      boundary: boundary,
       ctm_data: ctm_data || default_ctm,
       warn_missing: warn_missing
     }
@@ -196,64 +202,24 @@ defmodule BDM do
   ## Parameters
   - `bdm`: BDM instance
   - `data`: Input data (list for 1D, list of lists for 2D)
-  - `block_size`: Size of blocks for decomposition
-  - `boundary`: Boundary condition (:ignore, :recursive, :correlated)
-
-  ## Examples
-      iex> bdm = BDM.new(1, 2)
-      iex> BDM.compute(bdm, [0, 1, 0, 1, 0, 1], 2, :ignore)
-      10.755
   """
-  @spec compute(t(), binary_string() | binary_matrix(), integer(), boundary_condition()) ::
+  @spec compute(t(), binary_string() | binary_matrix()) ::
           float()
-  def compute(%__MODULE__{ndim: 1} = bdm, data, block_size, boundary) when is_list(data) do
+  def compute(%__MODULE__{ndim: 1, block_size: block_size, boundary: boundary} = bdm, data) when is_list(data) do
     data
     |> partition_1d(block_size, boundary)
     |> lookup_and_aggregate(bdm)
   end
 
-  def compute(%__MODULE__{ndim: 2} = bdm, data, block_size, boundary) when is_list(data) do
+  def compute(%__MODULE__{ndim: 2, block_size: block_size, boundary: boundary} = bdm, data) when is_list(data) do
     data
     |> partition_2d(block_size, boundary)
     |> lookup_and_aggregate(bdm)
   end
 
   @doc """
-  Performs perturbation analysis to identify complexity-driving elements.
-
-  Returns the perturbation effect (complexity after perturbation - original complexity) for all elements of the input data.
+  Partitions 1D data into blocks according to boundary condition.
   """
-  @spec perturbation_analysis(
-          t(),
-          binary_string() | binary_matrix(),
-          integer(),
-          boundary_condition()
-        ) ::
-          list({integer(), float()})
-  def perturbation_analysis(%__MODULE__{ndim: 1} = bdm, data, block_size, boundary) do
-    original_complexity = compute(bdm, data, block_size, boundary)
-
-    for {_val, i} <- Enum.with_index(data) do
-      perturbed_data = flip_bit_1d(data, i)
-      new_complexity = compute(bdm, perturbed_data, block_size, boundary)
-      {i, new_complexity - original_complexity}
-    end
-  end
-
-  def perturbation_analysis(%__MODULE__{ndim: 2} = bdm, data, block_size, boundary) do
-    original_complexity = compute(bdm, data, block_size, boundary)
-
-    for {row, i} <- Enum.with_index(data),
-        {_val, j} <- Enum.with_index(row) do
-      perturbed_data = flip_bit_2d(data, i, j)
-      new_complexity = compute(bdm, perturbed_data, block_size, boundary)
-      {{i, j}, new_complexity - original_complexity}
-    end
-  end
-
-  #
-  # Partitions 1D data into blocks according to boundary condition.
-  #
   @spec partition_1d(binary_string(), integer(), boundary_condition()) :: list(binary_string())
   def partition_1d(data, block_size, :ignore) do
     data
@@ -283,9 +249,9 @@ defmodule BDM do
     end
   end
 
-  #
-  # Partitions 2D data into blocks according to boundary condition.
-  #
+  @doc """
+  Partitions 2D data into blocks according to boundary condition.
+  """
   @spec partition_2d(binary_matrix(), integer(), boundary_condition()) :: list(binary_matrix())
   def partition_2d(data, block_size, :ignore) do
     rows = length(data)
@@ -360,23 +326,5 @@ defmodule BDM do
       value ->
         value
     end
-  end
-
-  #
-  # Flips a bit in 1D data.
-  #
-  @spec flip_bit_1d(binary_string(), integer()) :: binary_string()
-  defp flip_bit_1d(data, index) do
-    List.update_at(data, index, fn bit -> 1 - bit end)
-  end
-
-  #
-  # Flips a bit in 2D data.
-  #
-  @spec flip_bit_2d(binary_matrix(), integer(), integer()) :: binary_matrix()
-  defp flip_bit_2d(data, row, col) do
-    List.update_at(data, row, fn row_data ->
-      List.update_at(row_data, col, fn bit -> 1 - bit end)
-    end)
   end
 end
