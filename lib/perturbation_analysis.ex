@@ -5,7 +5,7 @@ defmodule BDM.PerturbationAnalysis do
   """
 
   @doc """
-  Generate all possible single-bit flip perturbations of the data.
+  Generates all possible single-bit flip perturbations of the data.
   """
   def single_bit_perturbations(%BDM{ndim: 1}, data) do
     for i <- 0..(length(data) - 1) do
@@ -21,7 +21,7 @@ defmodule BDM.PerturbationAnalysis do
   end
 
   @doc """
-  Generate random perturbations with specified noise level.
+  Generates random perturbations with specified noise level.
   noise_level: fraction of bits to flip (0.0 to 1.0)
   """
   def random_perturbations(%BDM{ndim: 1}, data, num_perturbations, noise_level) do
@@ -49,7 +49,7 @@ defmodule BDM.PerturbationAnalysis do
   end
 
   @doc """
-  Calculate BDM for original and all perturbed versions.
+  Calculates BDM for original and all perturbed versions.
   """
   def calculate_perturbation_effects(bdm, original_data, perturbations) do
     original_bdm = BDM.compute(bdm, original_data)
@@ -74,7 +74,7 @@ defmodule BDM.PerturbationAnalysis do
   end
 
   @doc """
-  Create a sensitivity profile showing which positions are most sensitive to perturbation.
+  Creates a sensitivity profile showing which positions are most sensitive to perturbation.
   """
   def sensitivity_profile(bdm, data) do
     single_perturbations = single_bit_perturbations(bdm, data)
@@ -91,7 +91,7 @@ defmodule BDM.PerturbationAnalysis do
   end
 
   @doc """
-  Identify positions where perturbation sensitivity exceeds threshold.
+  Identifies positions where perturbation sensitivity exceeds threshold.
   """
   def detect_critical_positions(sensitivity_profile, threshold \\ 1.0) do
     sensitivity_profile
@@ -100,7 +100,7 @@ defmodule BDM.PerturbationAnalysis do
   end
 
   @doc """
-  Create a landscape showing cumulative effects of multi-bit perturbations.
+  Creates a landscape showing cumulative effects of multi-bit perturbations.
   """
   def perturbation_landscape(%BDM{ndim: 1} = bdm, data, radius) do
     original_bdm = BDM.compute(bdm, data)
@@ -133,7 +133,7 @@ defmodule BDM.PerturbationAnalysis do
   end
 
   @doc """
-  Calculate stability coefficient: ratio of consistent complexity estimates.
+  Calculates stability coefficient: ratio of consistent complexity estimates.
   """
   def stability_coefficient(bdm, data, num_trials \\ 50, noise_level \\ 0.1) do
     original_bdm = BDM.compute(bdm, data)
@@ -142,7 +142,7 @@ defmodule BDM.PerturbationAnalysis do
 
     {_, results} = calculate_perturbation_effects(bdm, data, perturbations)
 
-    # Calculate coefficient of variation
+    # Coefficient of variation
     delta_bdms = Enum.map(results, &(&1.delta_bdm))
     mean_delta = Enum.sum(delta_bdms) / length(delta_bdms)
     variance = Enum.sum(Enum.map(delta_bdms, fn x -> (x - mean_delta) * (x - mean_delta) end)) / length(delta_bdms)
