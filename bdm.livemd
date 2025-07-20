@@ -17,17 +17,14 @@ alias VegaLite, as: Vl
 
 The Block Decomposition Method (BDM) is a computational approach developed by Hector Zenil and colleagues to approximate the algorithmic complexity of datasets. This method extends the Coding Theorem Method (CTM) to handle larger datasets by decomposing them into smaller blocks and aggregating their complexities.
 
-## Theory and Background
-
-### Algorithmic Complexity
-
-Algorithmic complexity (also known as Kolmogorov complexity) measures the length of the shortest computer program that can generate a given dataset. While this is theoretically uncomputable, BDM provides a practical approximation.
+<!-- livebook:{"break_markdown":true} -->
 
 ### Key Concepts
 
+* **Algorithmic complexity** (also known as Kolmogorov complexity): Measures the length of the shortest computer program that can generate a given dataset. While this is theoretically uncomputable, BDM provides a practical approximation.
+* **Algorithmic Probability**: Theoretical foundation based on Solomonoff-Levin theory. The algorithmic probability of an object x is the probability AP of a binary computer program p producing x by chance running on a Turing-complete computer language L and halting.
 * **Coding Theorem Method (CTM)**: Uses precomputed output frequency distributions from Turing machines
 * **Block Decomposition**: Breaks large datasets into manageable blocks
-* **Algorithmic Probability**: Theoretical foundation based on Solomonoff-Levin theory. The algorithmic probability of an object x is the probability AP of a binary computer program p producing x by chance running on a Turing-complete computer language L and halting.
 
 ## Interactive Examples
 
@@ -355,10 +352,6 @@ Vl.new(width: 600, height: 400, title: "Performance Analysis")
 ```
 
 ## Perturbation Analysis
-
-* Position Sensitivity Chart: Shows how sensitive each bit position is to perturbation across different pattern types (structured, random, mostly zeros, clustered)
-* Noise Level Impact Visualization: Demonstrates how different noise levels (5% to 50%) affect BDM complexity, showing mean change, standard deviation, and maximum changes
-* Perturbation Phase Space: A scatter plot showing the relationship between original and perturbed BDM values, with point size indicating Hamming distance
 
 ```elixir
 alias BDM.PerturbationAnalysis
