@@ -187,7 +187,7 @@ Vl.new(width: 600, height: 400)
 # Analyze how block size affects BDM estimation
 test_sequence = for _ <- 1..100, do: Enum.random([0, 1])
 
-block_sizes = [2, 3, 4, 5]
+block_sizes = [2, 3]
 block_analysis = 
   for block_size <- block_sizes do
     bdm_value = BDM.compute(bdm, test_sequence, block_size, :ignore)
@@ -412,7 +412,7 @@ noise_analysis_data =
   for noise_level <- noise_levels do
     # Generate multiple perturbations at this noise level
     perturbations = PerturbationAnalysis.random_perturbations(base_pattern, 20, noise_level)
-    {original_bdm, results} = PerturbationAnalysis.calculate_perturbation_effects(bdm, base_pattern, perturbations)
+    {original_bdm, results} = PerturbationAnalysis.calculate_perturbation_effects(bdm, base_pattern, perturbations, 3)
     
     # Calculate statistics
     delta_bdms = Enum.map(results, &(&1.delta_bdm))
@@ -506,7 +506,7 @@ Analyze critical points for structured pattern:
 
 ```elixir
 structured_pattern = [0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1]
-sensitivity_profile = PerturbationAnalysis.sensitivity_profile(bdm, structured_pattern)
+sensitivity_profile = PerturbationAnalysis.sensitivity_profile(bdm, structured_pattern, 3)
 critical_points = PerturbationAnalysis.detect_critical_positions(sensitivity_profile, 0.5)
 
 critical_point_data =
@@ -574,7 +574,7 @@ Compare robustness across different pattern types:
 ```elixir
 robustness_comparison = 
   for {name, pattern} <- test_patterns do
-    analysis = PerturbationAnalysis.stability_coefficient(bdm, pattern, 30, 0.15)
+    analysis = PerturbationAnalysis.stability_coefficient(bdm, pattern, 3, :ignore, 30, 0.15)
     Map.put(analysis, :pattern, name)
   end
 

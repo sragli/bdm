@@ -33,7 +33,7 @@ defmodule BDM.PerturbationAnalysis do
   @doc """
   Calculate BDM for original and all perturbed versions.
   """
-  def calculate_perturbation_effects(bdm, original_data, perturbations, block_size \\ 3, boundary \\ :ignore) do
+  def calculate_perturbation_effects(bdm, original_data, perturbations, block_size, boundary \\ :ignore) do
     original_bdm = BDM.compute(bdm, original_data, block_size, boundary)
 
     perturbation_results =
@@ -58,7 +58,7 @@ defmodule BDM.PerturbationAnalysis do
   @doc """
   Create a sensitivity profile showing which positions are most sensitive to perturbation.
   """
-  def sensitivity_profile(bdm, data, block_size \\ 3, boundary \\ :ignore) do
+  def sensitivity_profile(bdm, data, block_size, boundary \\ :ignore) do
     single_perturbations = single_bit_perturbations(data)
     {_, results} = calculate_perturbation_effects(bdm, data, single_perturbations, block_size, boundary)
 
@@ -84,7 +84,7 @@ defmodule BDM.PerturbationAnalysis do
   @doc """
   Create a landscape showing cumulative effects of multi-bit perturbations.
   """
-  def perturbation_landscape(bdm, data, radius \\ 2, block_size \\ 3, boundary \\ :ignore) do
+  def perturbation_landscape(bdm, data, radius, block_size, boundary \\ :ignore) do
     original_bdm = BDM.compute(bdm, data, block_size, boundary)
 
     data_length = length(data)
@@ -102,7 +102,7 @@ defmodule BDM.PerturbationAnalysis do
           effects =
             for combination <- Enum.take(combinations, 10) do
               perturbed_data = flip_positions(data, combination)
-              perturbed_bdm = BDM.compute(bdm, perturbed_data, 3, :ignore)
+              perturbed_bdm = BDM.compute(bdm, perturbed_data, block_size, boundary)
               perturbed_bdm - original_bdm
             end
 
@@ -124,12 +124,12 @@ defmodule BDM.PerturbationAnalysis do
   @doc """
   Calculate stability coefficient: ratio of consistent complexity estimates.
   """
-  def stability_coefficient(bdm, data, num_trials \\ 50, noise_level \\ 0.1, block_size \\ 3, boundary \\ :ignore) do
+  def stability_coefficient(bdm, data, block_size, boundary \\ :ignore, num_trials \\ 50, noise_level \\ 0.1) do
     original_bdm = BDM.compute(bdm, data, block_size, boundary)
 
     perturbations = random_perturbations(data, num_trials, noise_level)
 
-    {_, results} = calculate_perturbation_effects(bdm, data, perturbations)
+    {_, results} = calculate_perturbation_effects(bdm, data, perturbations, block_size, boundary)
 
     # Calculate coefficient of variation
     delta_bdms = Enum.map(results, &(&1.delta_bdm))

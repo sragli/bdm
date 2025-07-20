@@ -69,7 +69,7 @@ large_matrix = [
 ]
 
 complexity_2x2 = BDM.compute(bdm, large_matrix, 2, :ignore)
-normalized_complexity = BDM.normalize(complexity_2x2, large_matrix)
+normalized_complexity = BDMUtils.normalize(complexity_2x2, large_matrix)
 perturbations_2x2 = BDM.perturbation_analysis(bdm, large_matrix, 2, :ignore)
 ```
 
