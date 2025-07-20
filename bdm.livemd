@@ -31,9 +31,9 @@ The Block Decomposition Method (BDM) is a computational approach developed by He
 ### Example 1: Simple Binary Sequences
 
 ```elixir
-random_seq = for _ <- 1..50, do: Enum.random([0, 1])
-ordered_seq = List.duplicate([0, 1], 25) |> List.flatten()
-constant_seq = List.duplicate(0, 50)
+random_seq = for _ <- 1..200, do: Enum.random([0, 1])
+ordered_seq = List.duplicate([0, 1], 100) |> List.flatten()
+constant_seq = List.duplicate(0, 200)
 
 bdm = BDM.new(1, 2, 3, :ignore)
 
@@ -182,26 +182,29 @@ Vl.new(width: 600, height: 400)
 
 <!-- livebook:{"break_markdown":true} -->
 
-Analyze how block size affects BDM estimation:
+Analyzing how block size affects BDM estimation:
 
 ```elixir
-test_sequence = for _ <- 1..100, do: Enum.random([0, 1])
-
 block_sizes = [2, 3]
-block_analysis = 
+block_analysis_viz = 
   for block_size <- block_sizes do
     bdm = BDM.new(1, 2, block_size, :ignore)
-    bdm_value = BDM.compute(bdm, test_sequence)
-    %{block_size: block_size, bdm_value: bdm_value}
+    bdm_value = BDM.compute(bdm, random_seq)
+    %{"Block Size" => block_size, "BDM" => bdm_value}
   end
 
-IO.puts("Block Size Analysis:")
-for result <- block_analysis do
-  IO.puts("Block size #{result.block_size}: BDM = #{result.bdm_value}")
-end
+Kino.DataTable.new(
+  block_analysis_viz,
+  keys: ["Block Size", "BDM"],
+  name: "Block Size Analysis"
+)
 ```
 
-### Comparative Analysis with Shannon Entropy
+### Comparative Analysis with Shannon Entropy and LZW
+
+<!-- livebook:{"break_markdown":true} -->
+
+Utility modules:
 
 ```elixir
 defmodule Entropy do
@@ -218,6 +221,58 @@ defmodule Entropy do
   end
 end
 
+defmodule LZW do
+  def compress_list(data) when is_list(data) do
+    unique_elements = data |> Enum.uniq()
+    initial_dict = 
+      unique_elements
+      |> Enum.with_index()
+      |> Enum.into(%{}, fn {elem, idx} -> {[elem], idx} end)
+    
+    next_code = map_size(initial_dict)
+    
+    {result, _dict, _code} = compress_helper(data, [], initial_dict, next_code, [])
+    Enum.reverse(result)
+  end
+
+  def compress_matrix(matrix) when is_list(matrix) do
+    rows = length(matrix)
+    cols = if rows > 0, do: length(hd(matrix)), else: 0
+    
+    flat_data = List.flatten(matrix)
+    compressed = compress_list(flat_data)
+    
+    {compressed, {rows, cols}}
+  end
+
+  defp compress_helper([], current_string, dict, next_code, result) do
+    case current_string do
+      [] -> {result, dict, next_code}
+      _ -> 
+        code = Map.get(dict, current_string)
+        {[code | result], dict, next_code}
+    end
+  end
+
+  defp compress_helper([char | rest], current_string, dict, next_code, result) do
+    new_string = current_string ++ [char]
+    
+    case Map.get(dict, new_string) do
+      nil ->
+        current_code = Map.get(dict, current_string)
+        new_dict = Map.put(dict, new_string, next_code)
+        compress_helper(rest, [char], new_dict, next_code + 1, [current_code | result])
+      
+      _code ->
+        compress_helper(rest, new_string, dict, next_code, result)
+    end
+  end
+end
+```
+
+Comparison:
+
+```elixir
 bdm = BDM.new(1, 2, 3, :ignore)
 
 # Compare BDM with Shannon entropy
@@ -228,20 +283,23 @@ comparison_data = [
   {[0, 0, 1] |> List.duplicate(16) |> List.flatten() |> Enum.take(50), "pattern 001"}
 ]
 
-data = for {sequence, name} <- comparison_data do
-  bdm_val = BDM.compute(bdm, sequence)
-  entropy_val = Entropy.shannon_entropy(sequence)
-  %{
-    "Pattern" => name,
-    "BDM" => Float.round(bdm_val, 2),
-    "Entropy" => Float.round(entropy_val, 2)
-  }
-end
+data_viz =
+  for {sequence, name} <- comparison_data do
+    bdm_val = BDM.compute(bdm, sequence)
+    entropy_val = Entropy.shannon_entropy(sequence)
+    lzw_val = length(LZW.compress_list(sequence)) / length(sequence)
+    %{
+      "Pattern" => name,
+      "BDM" => Float.round(bdm_val, 2),
+      "Entropy" => Float.round(entropy_val, 2),
+      "LZW" => Float.round(lzw_val, 2),
+    }
+  end
 
 Kino.DataTable.new(
-  data,
-  keys: ["Pattern", "BDM", "Entropy"],
-  name: "BDM vs Shannon Entropy Comparison"
+  data_viz,
+  keys: ["Pattern", "BDM", "Entropy", "LZW"],
+  name: "BDM vs Shannon Entropy and LZW Comparison"
 )
 ```
 
