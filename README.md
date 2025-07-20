@@ -54,7 +54,7 @@ The CTM values follow the principle that:
 
 * *BDM.new/4* - Creates a new BDM analysis structure
 * *BDM.compute/4* - Computes the BDM complexity of a dataset
-* *BDM.PerturbationAnalysis* - Performs perturbation analysis to identify complexity-driving elements, sensitivity, critical points, stability
+* *BDM.PerturbationAnalysis* - Performs perturbation analysis
 * *BDMUtils.normalize/2* - Normalizes BDM value between 0 and 1
 
 ## Usage

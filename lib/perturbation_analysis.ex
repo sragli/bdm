@@ -1,6 +1,7 @@
 defmodule BDM.PerturbationAnalysis do
   @moduledoc """
-  Tools for analyzing how perturbations affect BDM complexity estimates.
+  Tools for analyzing how perturbations affect BDM complexity estimates in order to
+  identify complexity-driving elements, sensitivity, critical points and stability.
   """
 
   @doc """
