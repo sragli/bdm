@@ -75,7 +75,7 @@ complexity_2x2 = BDM.compute(bdm, large_matrix, 2, :ignore)
 normalized_complexity = BDMUtils.normalize(complexity_2x2, large_matrix)
 ```
 
-For more details and explanations, check the [LiveBook](bdm.livemd).
+For more details and explanations, check the [Livebook](bdm.livemd).
 
 ## How BDM Works
 
