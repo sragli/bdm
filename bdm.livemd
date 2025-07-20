@@ -310,10 +310,6 @@ Kino.DataTable.new(
 
 ```elixir
 defmodule CellularAutomata do
-  @moduledoc """
-  Implementation of Rule 30 cellular automaton.
-  """
-  
   def rule_30(initial_state, steps) do
     evolve(initial_state, steps, &rule_30_step/1)
   end
@@ -345,7 +341,6 @@ defmodule CellularAutomata do
   end
 end
 
-# Generate cellular automaton evolution
 initial_state = [0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0]
 evolution = CellularAutomata.rule_30(initial_state, 20)
 
