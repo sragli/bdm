@@ -418,7 +418,7 @@ Perturbation analysis reveals how robust BDM complexity estimates are to small c
 
 <!-- livebook:{"break_markdown":true} -->
 
-Creating test patterns for perturbation analysis and analyzing sensitivity for each pattern:
+Creating 1D test patterns for perturbation analysis and analyzing sensitivity for each pattern:
 
 ```elixir
 test_patterns_1d = %{
@@ -638,4 +638,64 @@ Vl.new(width: 500, height: 300, title: "Pattern Robustness Analysis")
 |> Vl.encode_field(:x, "pattern", type: :nominal, title: "Pattern Type")
 |> Vl.encode_field(:y, "stability_score", type: :quantitative, title: "Stability Score")
 |> Vl.encode_field(:color, "pattern", type: :nominal)
+```
+
+### Perturbation landscape
+
+<!-- livebook:{"break_markdown":true} -->
+
+2D landscape:
+
+```elixir
+bdm = BDM.new(2, 2, 2, :ignore)
+
+landscape = PerturbationAnalysis.perturbation_landscape(bdm, patterns.random, 2)
+```
+
+```elixir
+defmodule LandscapeVisualizer do
+  def extract_max_effects(landscape_result, flip_count \\ 1) do
+    for point <- landscape_result do
+      effect = Enum.find(point.effects, fn e -> e.num_flips == flip_count end)
+      max_effect = if effect, do: effect.max_effect, else: 0.0
+      max_row = if length(landscape_result) > 0 do
+          landscape_result |> Enum.map(& &1.center_row) |> Enum.max()
+        else
+          0
+        end
+      size = max_row + 2  # Add 1 for 0-based indexing + 1 for radius
+      
+      %{
+        x: point.center_col,
+        y: size - 1 - point.center_row,  # Flip y coordinate
+        max_effect: max_effect,
+        abs_effect: abs(max_effect)
+      }
+    end
+  end
+  
+  def create_landscape_heatmap(data, title) do
+    Vl.new(width: 300, height: 300, title: title)
+    |> Vl.data_from_values(data)
+    |> Vl.mark(:rect)
+    |> Vl.encode_field(:x, "x", type: :ordinal, title: "Column")
+    |> Vl.encode_field(:y, "y", type: :ordinal, title: "Row")
+    |> Vl.encode_field(:color, "abs_effect", 
+        type: :quantitative,
+        scale: [scheme: "viridis"],
+        legend: [title: "Perturbation Effect"])
+    |> Vl.encode(:tooltip, [
+      [field: "x", type: :quantitative],
+      [field: "y", type: :quantitative], 
+      [field: "max_effect", type: :quantitative, title: "Max Effect"],
+      [field: "abs_effect", type: :quantitative, title: "Abs Effect"]
+    ])
+  end
+end
+
+plot_data = LandscapeVisualizer.extract_max_effects(landscape, 1)
+LandscapeVisualizer.create_landscape_heatmap(
+  plot_data, 
+  "Perturbation Landscape for random (1-bit flips)"
+)
 ```
