@@ -1,5 +1,4 @@
 defmodule BDMUtils do
-
   @doc """
   Normalizes BDM value between 0 and 1.
   """
@@ -22,5 +21,4 @@ defmodule BDMUtils do
 
     (bdm_value - min_complexity) / (max_complexity - min_complexity)
   end
-
 end

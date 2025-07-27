@@ -44,6 +44,7 @@ defmodule BDM.PerturbationAnalysis do
         Enum.take_random(0..(data_width - 1), num_flips),
         Enum.take_random(0..(data_length - 1), num_flips)
       }
+
       flip_positions_2d(data, positions)
     end
   end
@@ -143,9 +144,13 @@ defmodule BDM.PerturbationAnalysis do
     {_, results} = calculate_perturbation_effects(bdm, data, perturbations)
 
     # Coefficient of variation
-    delta_bdms = Enum.map(results, &(&1.delta_bdm))
+    delta_bdms = Enum.map(results, & &1.delta_bdm)
     mean_delta = Enum.sum(delta_bdms) / length(delta_bdms)
-    variance = Enum.sum(Enum.map(delta_bdms, fn x -> (x - mean_delta) * (x - mean_delta) end)) / length(delta_bdms)
+
+    variance =
+      Enum.sum(Enum.map(delta_bdms, fn x -> (x - mean_delta) * (x - mean_delta) end)) /
+        length(delta_bdms)
+
     std_dev = :math.sqrt(variance)
 
     coefficient_of_variation = if mean_delta != 0, do: std_dev / abs(mean_delta), else: 0.0
@@ -155,7 +160,8 @@ defmodule BDM.PerturbationAnalysis do
       mean_perturbation_effect: mean_delta,
       std_perturbation_effect: std_dev,
       coefficient_of_variation: coefficient_of_variation,
-      stability_score: 1.0 / (1.0 + coefficient_of_variation)  # Higher is more stable
+      # Higher is more stable
+      stability_score: 1.0 / (1.0 + coefficient_of_variation)
     }
   end
 

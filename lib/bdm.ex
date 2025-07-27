@@ -205,13 +205,15 @@ defmodule BDM do
   """
   @spec compute(t(), binary_string() | binary_matrix()) ::
           float()
-  def compute(%__MODULE__{ndim: 1, block_size: block_size, boundary: boundary} = bdm, data) when is_list(data) do
+  def compute(%__MODULE__{ndim: 1, block_size: block_size, boundary: boundary} = bdm, data)
+      when is_list(data) do
     data
     |> partition_1d(block_size, boundary)
     |> lookup_and_aggregate(bdm)
   end
 
-  def compute(%__MODULE__{ndim: 2, block_size: block_size, boundary: boundary} = bdm, data) when is_list(data) do
+  def compute(%__MODULE__{ndim: 2, block_size: block_size, boundary: boundary} = bdm, data)
+      when is_list(data) do
     data
     |> partition_2d(block_size, boundary)
     |> lookup_and_aggregate(bdm)
