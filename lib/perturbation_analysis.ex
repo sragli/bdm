@@ -126,15 +126,68 @@ defmodule BDM.PerturbationAnalysis do
             end
 
           max_effect = if effects != [], do: Enum.max(effects), else: 0.0
-          %{center: center, num_flips: num_flips, max_effect: max_effect}
+
+          %{
+            num_flips: num_flips,
+            max_effect: max_effect
+          }
         end
 
-      %{center: center, effects: perturbation_effects}
+      %{
+        center: center,
+        effects: perturbation_effects
+      }
     end
   end
 
+  #
+  # Returns max_effect, min_effect, and avg_effect for each flip count, providing more insight
+  # into the perturbation behavior.
+  #
   def perturbation_landscape(%BDM{ndim: 2} = bdm, data, radius) do
-    raise "Not implemented for 2D data"
+    original_bdm = BDM.compute(bdm, data)
+
+    data_height = length(data)
+    data_width = length(hd(data))
+
+    # Generate perturbations in a sliding 2D window
+    for center_row <- radius..(data_height - radius - 1),
+        center_col <- radius..(data_width - radius - 1) do
+      # Get all positions in the window around the center
+      # Only processes positions that allow a full radius window
+      positions =
+        for row <- (center_row - radius)..(center_row + radius),
+            col <- (center_col - radius)..(center_col + radius) do
+          {row, col}
+        end
+
+      # Limits for performance
+      max_flips = 8
+      max_combinations = 20
+
+      # Try all combinations of flips in this window
+      # Only processes positions that allow a full radius window
+      perturbation_effects =
+        for num_flips <- 1..min(length(positions), max_flips) do
+          combinations = combinations_2d(positions, num_flips)
+
+          # Limit combinations for performance
+          effects =
+            for combination <- Enum.take(combinations, max_combinations) do
+              perturbed_data = flip_positions_2d(data, combination)
+              perturbed_bdm = BDM.compute(bdm, perturbed_data)
+              perturbed_bdm - original_bdm
+            end
+
+          effect_stats_2d(num_flips, effects)
+        end
+
+      %{
+        center_row: center_row,
+        center_col: center_col,
+        effects: perturbation_effects
+      }
+    end
   end
 
   @doc """
@@ -200,5 +253,34 @@ defmodule BDM.PerturbationAnalysis do
 
   defp combinations_1d([h | t], n) do
     for(l <- combinations_1d(t, n - 1), do: [h | l]) ++ combinations_1d(t, n)
+  end
+
+  defp combinations_2d(_, 0), do: [[]]
+  defp combinations_2d([], _), do: []
+
+  defp combinations_2d([h | t], n) do
+    for(l <- combinations_2d(t, n - 1), do: [h | l]) ++ combinations_2d(t, n)
+  end
+
+  defp effect_stats_2d(num_flips, []) do
+    %{
+      num_flips: num_flips,
+      max_effect: 0.0,
+      min_effect: 0.0,
+      avg_effect: 0.0
+    }
+  end
+
+  defp effect_stats_2d(num_flips, effects) do
+    max_effect = Enum.max(effects)
+    min_effect = Enum.min(effects)
+    avg_effect = Enum.sum(effects) / length(effects)
+
+    %{
+      num_flips: num_flips,
+      max_effect: max_effect,
+      min_effect: min_effect,
+      avg_effect: avg_effect
+    }
   end
 end
