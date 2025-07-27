@@ -133,6 +133,10 @@ defmodule BDM.PerturbationAnalysis do
     end
   end
 
+  def perturbation_landscape(%BDM{ndim: 2} = bdm, data, radius) do
+    raise "Not implemented for 2D data"
+  end
+
   @doc """
   Calculates stability coefficient: ratio of consistent complexity estimates.
   """

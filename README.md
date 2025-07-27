@@ -52,10 +52,10 @@ The CTM values follow the principle that:
 
 ## Main Modules and Functions
 
-* *BDM.new/6* - Creates a new BDM analysis structure
-* *BDM.compute/2* - Computes the BDM complexity of a dataset
-* *BDM.PerturbationAnalysis* - Performs perturbation analysis
-* *BDMUtils.normalize/2* - Normalizes BDM value between 0 and 1
+* `BDM.new/6` - Creates a new BDM analysis structure
+* `BDM.compute/2` - Computes the BDM complexity of a dataset
+* `BDM.PerturbationAnalysis` - Performs perturbation analysis
+* `BDMUtils.normalize/2` - Normalizes BDM value between 0 and 1
 
 ## Usage
 
