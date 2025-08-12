@@ -137,5 +137,5 @@ The method essentially transforms an intractable global computation into a serie
 
 ## Citations
 
-* Hector Zenil, Santiago Hernández-Orozco, Narsis A. Kiani, Fernando Soler-Toscano, Antonio Rueda-Toicen 2018 A Decomposition Method for Global Evaluation of Shannon Entropy and Local Estimations of Algorithmic Complexity. arXiv:1609.00110
-* Hector Zenil, Narsis A. Kiani, Jesper Tegnr: Algorithmic Information Dynamics: A Computational Approach to Causality with Applications to Living Systems
+* Hector Zenil, Santiago Hernández-Orozco, Narsis A. Kiani, Fernando Soler-Toscano, Antonio Rueda-Toicen 2018 A Decomposition Method for Global Evaluation of Shannon Entropy and Local Estimations of Algorithmic Complexity. [arXiv:1609.00110](https://arxiv.org/abs/1609.00110)
+* Zenil H, Kiani NA, Tegnér J. Algorithmic Information Dynamics: [A Computational Approach to Causality with Applications to Living Systems](https://www.cambridge.org/core/books/algorithmic-information-dynamics/6ABDAD480E710BAD5180CED0C4822BDB). Cambridge University Press; 2023.
