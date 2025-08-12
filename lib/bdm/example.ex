@@ -1,4 +1,4 @@
-defmodule BDMExample do
+defmodule BDM.Example do
   @moduledoc """
   Example usage of the BDM module.
   """

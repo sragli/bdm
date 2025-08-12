@@ -27,6 +27,6 @@ defmodule BDMTest do
     bdm = BDM.new(1, 2, 1, :ignore, nil, true)
     m = [0, 1, 0, 1, 0, 1]
 
-    assert BDMUtils.normalize(BDM.compute(bdm, m), m) == 0.28738729581946004
+    assert BDM.Utils.normalize(BDM.compute(bdm, m), m) == 0.28738729581946004
   end
 end

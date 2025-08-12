@@ -20,6 +20,7 @@ defmodule BDM.PerturbationAnalysis do
     end
   end
 
+  @spec random_perturbations(BDM.t(), list(), integer(), number()) :: list()
   @doc """
   Generates random perturbations with specified noise level.
   noise_level: fraction of bits to flip (0.0 to 1.0)

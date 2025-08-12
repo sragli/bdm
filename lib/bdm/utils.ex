@@ -1,4 +1,4 @@
-defmodule BDMUtils do
+defmodule BDM.Utils do
   @doc """
   Normalizes BDM value between 0 and 1.
   """
