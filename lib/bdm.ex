@@ -203,8 +203,7 @@ defmodule BDM do
   - `bdm`: BDM instance
   - `data`: Input data (list for 1D, list of lists for 2D)
   """
-  @spec compute(t(), binary_string() | binary_matrix()) ::
-          float()
+  @spec compute(t(), binary_string() | binary_matrix()) :: float()
   def compute(%__MODULE__{ndim: 1, block_size: block_size, boundary: boundary} = bdm, data)
       when is_list(data) do
     data
