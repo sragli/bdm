@@ -175,8 +175,8 @@ defmodule BDM do
   - `warn_missing`: Whether to warn about missing CTM values
 
   ## Examples
-      iex> BDM.new(1, 2)
-      %BDM{ndim: 1, nsymbols: 2, ctm_data: ..., warn_missing: true}
+      iex> BDM.new(1, 2, 2)
+      %BDM{ndim: 1, nsymbols: 2, block_size: 2, ctm_data: ..., warn_missing: true}
   """
   @spec new(integer(), integer(), integer(), boundary_condition(), map() | nil, boolean()) :: t()
   def new(ndim, nsymbols, block_size, boundary \\ :ignore, ctm_data \\ nil, warn_missing \\ true) do

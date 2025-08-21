@@ -9,7 +9,7 @@ If [available in Hex](https://hex.pm/docs/publish), the package can be installed
 ```elixir
 def deps do
   [
-    {:bdm, "~> 0.1.0"}
+    {:bdm, "~> 0.1.1"}
   ]
 end
 ```
@@ -60,7 +60,7 @@ The CTM values follow the principle that:
 ## Usage
 
 ```elixir
-bdm = BDM.new(2, 2)
+bdm = BDM.new(2, 2, 2)
 
 large_matrix = [
   [0, 1, 0, 1, 0, 1],
@@ -71,7 +71,7 @@ large_matrix = [
   [1, 0, 1, 0, 1, 0]
 ]
 
-complexity_2x2 = BDM.compute(bdm, large_matrix, 2, :ignore)
+complexity_2x2 = BDM.compute(bdm, large_matrix)
 normalized_complexity = BDM.Utils.normalize(complexity_2x2, large_matrix)
 ```
 
