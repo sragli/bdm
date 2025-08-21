@@ -37,7 +37,7 @@ defmodule BDM.MixProject do
   defp docs() do
     [
       main: "BDM",
-      extras: ["README.md", "LICENSE", "examples.livemd"]
+      extras: ["README.md", "LICENSE", "examples.livemd", "CHANGELOG"]
     ]
   end
 
