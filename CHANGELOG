@@ -1,4 +1,8 @@
 ## [0.1.1] - 2025-08-21
 ### Fixed
-- Fixed README.md Usage section
+- Fixed README.md 'Usage' section
 - Fixed module documentation
+
+## [0.1.0] - 2025-08-12
+### Added
+- Initial release
