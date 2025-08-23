@@ -4,7 +4,7 @@ Elixir module that implements the Block Decomposition Method (BDM) developed by 
 
 ## Installation
 
-If [available in Hex](https://hex.pm/docs/publish), the package can be installed by adding `bdm` to your list of dependencies in `mix.exs`:
+The package can be installed by adding `bdm` to your list of dependencies in `mix.exs`:
 
 ```elixir
 def deps do
@@ -87,9 +87,9 @@ The Coding Theorem Method (CTM) is a numerical approximation to the algorithmic 
 
 BDM builds upon the Coding Theorem Method (CTM), which approximates algorithmic complexity using this formula:
 
-```math
+$$
 K(s) ≈ -log_2(P(s))
-```
+$$
 
 where P(s) is the algorithmic probability of string s. CTM approximates algorithmic probability by exploring spaces of Turing machines with n symbols and m states, counting how many produce a given output, and dividing by the total number of machines that halt.
 
@@ -109,15 +109,15 @@ For each unique slice created during decomposition, the method looks up the prec
 Step 4: Aggregation
 The CTM values for slices can be aggregated back to a global estimate of Kolmogorov complexity for the entire object using the BDM formula:
 
-```math
-BDM(X) = \sum_i{CTM(s_i) + log_2(n_i)}
-```
+$$
+BDM(X) = \sum_i{CTM(sᵢ) + log_2(nᵢ)}
+$$
 
 where:
 
-* i indexes the set of all unique slices
-* $CTM(s_i)$ is the complexity of slice i
-* nᵢ is the number of occurrences of slice i
+* $i$ indexes the set of all unique slices
+* $CTM(sᵢ)$ is the complexity of slice $i$
+* $nᵢ$ is the number of occurrences of slice $i$
 
 ### Boundary Conditions
 
