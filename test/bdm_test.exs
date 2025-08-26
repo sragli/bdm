@@ -8,7 +8,7 @@ defmodule BDMTest do
     assert BDM.compute(bdm, m) == 5.169962500721156
   end
 
-  test "works correctly for 2d matrices" do
+  test "works correctly for 2D matrices" do
     bdm = BDM.new(2, 2, 2, :ignore)
 
     m = [
@@ -19,6 +19,21 @@ defmodule BDMTest do
       [0, 1, 0, 1, 0, 1],
       [1, 0, 1, 0, 1, 0]
     ]
+
+    assert BDM.compute(bdm, m) == 9.339925001442312
+  end
+
+  test "works correctly for Nx.Tensor" do
+    bdm = BDM.new(2, 2, 2, :ignore)
+
+    m = Nx.tensor([
+      [0, 1, 0, 1, 0, 1],
+      [1, 0, 1, 0, 1, 0],
+      [0, 1, 0, 1, 0, 1],
+      [1, 0, 1, 0, 1, 0],
+      [0, 1, 0, 1, 0, 1],
+      [1, 0, 1, 0, 1, 0]
+    ])
 
     assert BDM.compute(bdm, m) == 9.339925001442312
   end

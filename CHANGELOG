@@ -1,3 +1,7 @@
+## [0.2.0] - 2025-08-26
+### Added
+- Using the [Nx](https://hexdocs.pm/nx) library to compute BDM for large 2D matrices (images) more efficiently
+
 ## [0.1.1] - 2025-08-21
 ### Fixed
 - Fixed README.md 'Usage' section

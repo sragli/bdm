@@ -9,7 +9,7 @@ The package can be installed by adding `bdm` to your list of dependencies in `mi
 ```elixir
 def deps do
   [
-    {:bdm, "~> 0.1.1"}
+    {:bdm, "~> 0.2.0"}
   ]
 end
 ```
@@ -53,7 +53,7 @@ The CTM values follow the principle that:
 ## Main Modules and Functions
 
 * `BDM.new/6` - Creates a new BDM analysis structure
-* `BDM.compute/2` - Computes the BDM complexity of a dataset
+* `BDM.compute/2` - Computes the BDM complexity of a dataset. The input argument can either be a 1D list, a 2D matrix (list of lists) or an `%Nx.Tensor{}`
 * `BDM.PerturbationAnalysis` - Performs perturbation analysis
 * `BDM.Utils.normalize/2` - Normalizes BDM value between 0 and 1
 

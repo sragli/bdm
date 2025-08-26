@@ -15,7 +15,7 @@ defmodule BDM do
         }
 
   @type boundary_condition :: :ignore | :recursive | :correlated
-  @type binary_matrix :: list(list(integer()))
+  @type binary_matrix :: list(list(integer())) | Nx.Tensor.t()
   @type binary_string :: list(integer())
 
   # Default CTM values for small binary strings (simplified example)
@@ -204,15 +204,19 @@ defmodule BDM do
   - `data`: Input data (list for 1D, list of lists for 2D)
   """
   @spec compute(t(), binary_string() | binary_matrix()) :: float()
-  def compute(%__MODULE__{ndim: 1, block_size: block_size, boundary: boundary} = bdm, data)
-      when is_list(data) do
+  def compute(%__MODULE__{ndim: 1, block_size: block_size, boundary: boundary} = bdm, data) when is_list(data) do
     data
     |> partition_1d(block_size, boundary)
     |> lookup_and_aggregate(bdm)
   end
 
-  def compute(%__MODULE__{ndim: 2, block_size: block_size, boundary: boundary} = bdm, data)
-      when is_list(data) do
+  def compute(%__MODULE__{ndim: 2, block_size: block_size, boundary: boundary} = bdm, %Nx.Tensor{} = data) do
+    data
+    |> partition_2d(block_size, boundary)
+    |> lookup_and_aggregate(bdm)
+  end
+
+  def compute(%__MODULE__{ndim: 2, block_size: block_size, boundary: boundary} = bdm, data) when is_list(data) do
     data
     |> partition_2d(block_size, boundary)
     |> lookup_and_aggregate(bdm)
@@ -254,6 +258,17 @@ defmodule BDM do
   Partitions 2D data into blocks according to boundary condition.
   """
   @spec partition_2d(binary_matrix(), integer(), boundary_condition()) :: list(binary_matrix())
+
+  def partition_2d(%Nx.Tensor{} = data, block_size, :ignore) do
+    {rows, cols} = Nx.shape(data)
+
+    for i <- 0..(div(rows, block_size) - 1),
+        j <- 0..(div(cols, block_size) - 1) do
+      extract_block(data, i * block_size, j * block_size, block_size, block_size)
+      |> Nx.to_list()
+    end
+  end
+
   def partition_2d(data, block_size, :ignore) do
     rows = length(data)
     cols = if rows > 0, do: length(hd(data)), else: 0
@@ -284,6 +299,11 @@ defmodule BDM do
   #
   # Extracts a block from 2D data.
   #
+  defp extract_block(%Nx.Tensor{} = tensor, start_row, start_col, height, width) do
+    tensor
+    |> Nx.slice([start_row, start_col], [height, width])
+  end
+
   @spec extract_block(binary_matrix(), integer(), integer(), integer(), integer()) ::
           binary_matrix()
   defp extract_block(data, start_row, start_col, height, width) do
