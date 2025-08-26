@@ -18,7 +18,7 @@ defmodule BDM do
   @type binary_matrix :: list(list(integer())) | Nx.Tensor.t()
   @type binary_string :: list(integer())
 
-  # Default CTM values for small binary strings (simplified example)
+  # Default CTM values for small binary strings up to length 3
   @default_ctm_1d %{
     [0] => 1.0,
     [1] => 1.0,
@@ -36,7 +36,7 @@ defmodule BDM do
     [1, 1, 1] => 3.0
   }
 
-  # Default CTM values for small 2x2 binary matrices (simplified example)
+  # Default CTM values for small 2x2 binary matrices
   @default_ctm_2d %{
     [[0, 0], [0, 0]] => 2.0,
     [[0, 0], [0, 1]] => 4.585,

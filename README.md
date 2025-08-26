@@ -57,6 +57,10 @@ The CTM values follow the principle that:
 * `BDM.PerturbationAnalysis` - Performs perturbation analysis
 * `BDM.Utils.normalize/2` - Normalizes BDM value between 0 and 1
 
+## Limitations
+
+We only have pre-computed CTM values for block sizes [1, 2, 3] for 1D binary lists and [2, 3, 4] for 2D binary matrices. It restricts the analysis to 1D binary strings and 2D matrices, without supplying your own CTM values as `ctm_data`.
+
 ## Usage
 
 ```elixir
