@@ -9,7 +9,7 @@ The package can be installed by adding `bdm` to your list of dependencies in `mi
 ```elixir
 def deps do
   [
-    {:bdm, "~> 0.2.0"}
+    {:bdm, "~> 0.2.1"}
   ]
 end
 ```
