@@ -7,7 +7,7 @@ Mix.install([
   {:explorer, "~> 0.7"},
   {:vega_lite, "~> 0.1"},
   {:kino_vega_lite, "~> 0.1"},
-  {:bdm, "~> 0.1"}
+  {:bdm, "~> 0.3.0"}
 ])
 
 alias VegaLite, as: Vl

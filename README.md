@@ -2,6 +2,8 @@
 
 Elixir module that implements the Block Decomposition Method (BDM) developed by Hector Zenil et al to approximate the algorithmic complexity of datasets by decomposing them into smaller blocks and using precomputed CTM (Coding Theorem Method) values.
 
+This implementation is based on [PyBDM](http://github.com/sztal/pybdm) by Szymon Talaga et al, using Universal Distribution Approximations from the [Complexity Calculator](https://complexity-calculator.com).
+
 ## Installation
 
 The package can be installed by adding `bdm` to your list of dependencies in `mix.exs`:
@@ -9,7 +11,7 @@ The package can be installed by adding `bdm` to your list of dependencies in `mi
 ```elixir
 def deps do
   [
-    {:bdm, "~> 0.2.1"}
+    {:bdm, "~> 0.3.0"}
   ]
 end
 ```
@@ -56,10 +58,6 @@ The CTM values follow the principle that:
 * `BDM.compute/2` - Computes the BDM complexity of a dataset. The input argument can either be a 1D list, a 2D matrix (list of lists) or an `%Nx.Tensor{}`
 * `BDM.PerturbationAnalysis` - Performs perturbation analysis
 * `BDM.Utils.normalize/2` - Normalizes BDM value between 0 and 1
-
-## Limitations
-
-We only have pre-computed CTM values for block sizes [1, 2, 3] for 1D binary lists and [2, 3, 4] for 2D binary matrices. It restricts the analysis to 1D binary strings and 2D matrices, without supplying your own CTM values as `ctm_data`.
 
 ## Usage
 
@@ -125,11 +123,10 @@ where:
 
 ### Boundary Conditions
 
-When data cannot be perfectly divided into equal-sized blocks, BDM handles three boundary conditions:
+If the object’s size is not a multiple of the block size, the boundary (or residual) region remains. This module handles two boundary conditions:
 
-* Ignore: Malformed parts are ignored
-* Recursive: Slice malformed parts into smaller pieces (down to some minimum size) and lookup CTM values for those smaller pieces
-* Correlated: Use sliding window instead of slicing. This way all slices will be of the proper shape
+* Ignore: Discard incomplete blocks at the edges
+* Correlated: Use sliding window instead of slicing. By choosing the right window size, no residual blocks will remain at the boundary
 
 ### Key Advantages
 
@@ -141,5 +138,6 @@ The method essentially transforms an intractable global computation into a serie
 
 ## Citations
 
-* Hector Zenil, Santiago Hernández-Orozco, Narsis A. Kiani, Fernando Soler-Toscano, Antonio Rueda-Toicen 2018 A Decomposition Method for Global Evaluation of Shannon Entropy and Local Estimations of Algorithmic Complexity. [arXiv:1609.00110](https://arxiv.org/abs/1609.00110)
+* Soler-Toscano F., Zenil H., Delahaye J.-P. and Gauvrit N. (2014) Calculating Kolmogorov Complexity from the Output Frequency Distributions of Small Turing Machines. [PLoS ONE 9(5): e96223](http://www.plosone.org/article/info%3Adoi%2F10.1371%2Fjournal.pone.0096223). [BibTex entry](https://complexity-calculator.com/BibTex/frequencyBibTex.txt)
+* Zenil H., Soler-Toscano F., Kiani N.A., Hernández-Orozco S., Rueda-Toicen A. (2016) A Decomposition Method for Global Evaluation of Shannon Entropy and Local Estimations of Algorithmic Complexity, [arXiv:1609.00110](https://arxiv.org/abs/1609.00110) [BibTex entry](https://complexity-calculator.com/BibTex/bdmBibTex.txt)
 * Zenil H, Kiani NA, Tegnér J. Algorithmic Information Dynamics: [A Computational Approach to Causality with Applications to Living Systems](https://www.cambridge.org/core/books/algorithmic-information-dynamics/6ABDAD480E710BAD5180CED0C4822BDB). Cambridge University Press; 2023.

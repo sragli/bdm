@@ -1,3 +1,9 @@
+## [0.3.0] - 2025-08-29
+### Changed
+- Replaced the placeholder CTM values with real ones
+### Removed
+- Removed the incomplete implementation of the `:recursive` boundary condition
+
 ## [0.2.1] - 2025-08-27
 ### Added
 - Added new simple 3x3 pattern type: `[[1, 0, 0], [0, 0, 0], [0, 0, 0]]` and `[0, 0, 0], [0, 0, 0], [0, 0, 1]]`
