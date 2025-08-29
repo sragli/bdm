@@ -52,6 +52,10 @@ The CTM values follow the principle that:
 * More random/irregular patterns have higher complexity
 * Larger patterns generally have higher base complexity
 
+## Limitations
+
+Currently the module supports the analysis of 1D binary lists, with maximum block size 11, and 2D binary matrices with maximum block size 4*4.
+
 ## Main Modules and Functions
 
 * `BDM.new/6` - Creates a new BDM analysis structure

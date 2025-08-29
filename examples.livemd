@@ -7,7 +7,7 @@ Mix.install([
   {:explorer, "~> 0.7"},
   {:vega_lite, "~> 0.1"},
   {:kino_vega_lite, "~> 0.1"},
-  {:bdm, "~> 0.3.0"}
+  {:bdm, "~> 0.3.1"}
 ])
 
 alias VegaLite, as: Vl
@@ -187,7 +187,7 @@ Vl.new(width: 600, height: 400)
 Analyzing how block size affects BDM estimation:
 
 ```elixir
-block_sizes = [2, 3]
+block_sizes = 2..12
 block_analysis_viz = 
   for block_size <- block_sizes do
     bdm = BDM.new(1, 2, block_size, :ignore)
@@ -200,6 +200,15 @@ Kino.DataTable.new(
   keys: ["Block Size", "BDM"],
   name: "Block Size Analysis"
 )
+```
+
+```elixir
+Vl.new(width: 800, height: 400, title: "Block Size Analysis")
+|> Vl.data_from_values(block_analysis_viz)
+|> Vl.mark(:line, point: true)
+|> Vl.encode_field(:x, "Block Size", type: :quantitative)
+|> Vl.encode_field(:y, "BDM", type: :quantitative)
+|> Vl.config(legend: [orient: "top"])
 ```
 
 ### Comparative Analysis with Shannon Entropy and LZW
