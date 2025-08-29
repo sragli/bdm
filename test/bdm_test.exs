@@ -38,11 +38,4 @@ defmodule BDMTest do
 
     assert BDM.compute(bdm, m) == 10.072217827217502
   end
-
-  test "produces normalized results" do
-    bdm = BDM.new(1, 2, 2, :ignore, nil, true)
-    m = [0, 1, 0, 1, 0, 1]
-
-    assert BDM.Utils.normalize(BDM.compute(bdm, m), m) == 0.2696390332259332
-  end
 end

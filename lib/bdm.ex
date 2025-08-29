@@ -40,7 +40,7 @@ defmodule BDM do
       nsymbols: nsymbols,
       block_size: block_size,
       boundary: boundary,
-      ctm_data: ctm_data || load_ctm_data(ndim),
+      ctm_data: ctm_data || load_ctm_data(ndim, block_size),
       warn_missing: warn_missing
     }
   end
@@ -196,28 +196,25 @@ defmodule BDM do
     end
   end
 
-  @spec load_ctm_data(integer()) :: map()
-  defp load_ctm_data(1) do
-    "priv/ctm-b2-d12.etf"
+  @spec load_ctm_data(integer(), integer()) :: map()
+  defp load_ctm_data(1, block_size) do
+    Path.join(:code.priv_dir(:bdm), "ctm-b2-d12.etf")
     |> File.read!()
     |> :erlang.binary_to_term()
+    |> Stream.filter(fn {list, _k} -> block_size == length(list) end)
+    |> Stream.flat_map(fn {list, k} -> [{list, k}, {Enum.map(list, fn x -> 1 - x end), k}] end)
+    |> Enum.into(%{})
   end
 
-  defp load_ctm_data(2) do
-    "priv/ctm-b2-d4x4.etf"
+  defp load_ctm_data(2, block_size) do
+    Path.join(:code.priv_dir(:bdm), "ctm-b2-d4x4.etf")
     |> File.read!()
     |> :erlang.binary_to_term()
-    |> Stream.map(fn {list, k} ->
-      block_size = trunc(:math.sqrt(length(list)))
-
-      {
-        list
-        |> Nx.tensor()
-        |> Nx.reshape({block_size, block_size})
-        |> Nx.to_list(),
-        k
-      }
-    end)
+    |> Stream.filter(fn {list, _k} -> block_size == trunc(:math.sqrt(length(list))) end)
+    |> Stream.flat_map(fn {list, k} -> [
+        {Enum.chunk_every(list, block_size), k},
+        {Enum.chunk_every(Enum.map(list, fn x -> 1 - x end), block_size), k}
+      ] end)
     |> Enum.into(%{})
   end
 end

@@ -11,7 +11,7 @@ The package can be installed by adding `bdm` to your list of dependencies in `mi
 ```elixir
 def deps do
   [
-    {:bdm, "~> 0.3.0"}
+    {:bdm, "~> 0.3.1"}
   ]
 end
 ```

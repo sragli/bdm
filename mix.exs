@@ -4,7 +4,7 @@ defmodule BDM.MixProject do
   def project do
     [
       app: :bdm,
-      version: "0.3.0",
+      version: "0.3.1",
       elixir: "~> 1.17",
       start_permanent: Mix.env() == :prod,
       description: description(),
@@ -28,7 +28,7 @@ defmodule BDM.MixProject do
 
   defp package() do
     [
-      files: ~w(lib .formatter.exs mix.exs README.md LICENSE CHANGELOG),
+      files: ~w(lib priv .formatter.exs mix.exs README.md LICENSE CHANGELOG),
       licenses: ["Apache-2.0"],
       links: %{"GitHub" => "https://github.com/sragli/bdm"}
     ]
