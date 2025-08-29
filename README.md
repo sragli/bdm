@@ -2,7 +2,7 @@
 
 Elixir module that implements the Block Decomposition Method (BDM) developed by Hector Zenil et al to approximate the algorithmic complexity of datasets by decomposing them into smaller blocks and using precomputed CTM (Coding Theorem Method) values.
 
-This implementation is based on [PyBDM](http://github.com/sztal/pybdm) by Szymon Talaga et al, using Universal Distribution Approximations from the [Complexity Calculator](https://complexity-calculator.com).
+This implementation is based on [PyBDM](http://github.com/sztal/pybdm) by Szymon Talaga et al.
 
 ## Installation
 
@@ -57,7 +57,6 @@ The CTM values follow the principle that:
 * `BDM.new/6` - Creates a new BDM analysis structure
 * `BDM.compute/2` - Computes the BDM complexity of a dataset. The input argument can either be a 1D list, a 2D matrix (list of lists) or an `%Nx.Tensor{}`
 * `BDM.PerturbationAnalysis` - Performs perturbation analysis
-* `BDM.Utils.normalize/2` - Normalizes BDM value between 0 and 1
 
 ## Usage
 
@@ -74,7 +73,6 @@ large_matrix = [
 ]
 
 complexity_2x2 = BDM.compute(bdm, large_matrix)
-normalized_complexity = BDM.Utils.normalize(complexity_2x2, large_matrix)
 ```
 
 For more details and explanations, check the [Livebook](examples.livemd).
