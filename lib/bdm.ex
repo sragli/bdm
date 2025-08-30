@@ -23,7 +23,7 @@ defmodule BDM do
 
   ## Parameters
   - `ndim`: Dimensionality (1 for strings, 2 for matrices)
-  - `nsymbols`: Number of symbols (typically 2 for binary)
+  - `nsymbols`: Number of symbols (2 for binary)
   - `block_size`: Size of blocks for decomposition
   - `boundary`: Boundary condition (:ignore, :correlated)
   - `ctm_data`: Optional custom CTM lookup table

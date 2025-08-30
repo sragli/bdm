@@ -21,46 +21,26 @@ end
 ### Core BDM Implementation
 
 * Supports both 1D (binary strings) and 2D (binary matrices) data
-* Three boundary conditions: :ignore, :recursive, and :correlated
-* Proper BDM formula implementation: $CTM(block) + log_2(count)$
+* Two boundary conditions: :ignore and :correlated
+  * Ignore: Discards incomplete blocks
+  * Correlated: Uses sliding window approach with fixed window size of 1
 
 ### CTM Lookup Tables
 
 * Precomputed CTM values for small binary strings and matrices
+  * 1D lists, with maximum block size 11
+  * 2D matrices with maximum block size 4*4
 * Fallback mechanism for missing values (max CTM + 1 bit)
-
-### Partitioning Strategies
-
-* Ignore: Discards incomplete blocks
-* Recursive: Recursively partitions remainder into smaller blocks
-* Correlated: Uses sliding window approach
-
-### Additional Features
-
-* Block Entropy: For comparison with BDM complexity
-* Perturbation Analysis: Identifies complexity-driving elements
-  * Single-bit flip perturbations
-  * Random noise perturbations with configurable noise levels
-  * Comprehensive sensitivity analysis
-* Normalization: Scales BDM values between 0 and 1
-
-### Realistic Complexity Values
-
-The CTM values follow the principle that:
-
-* More structured/regular patterns have lower complexity
-* More random/irregular patterns have higher complexity
-* Larger patterns generally have higher base complexity
-
-## Limitations
-
-Currently the module supports the analysis of 1D binary lists, with maximum block size 11, and 2D binary matrices with maximum block size 4*4.
 
 ## Main Modules and Functions
 
 * `BDM.new/6` - Creates a new BDM analysis structure
 * `BDM.compute/2` - Computes the BDM complexity of a dataset. The input argument can either be a 1D list, a 2D matrix (list of lists) or an `%Nx.Tensor{}`
-* `BDM.PerturbationAnalysis` - Performs perturbation analysis
+* `BDM.PerturbationAnalysis` - Performs perturbation analysis, identifies complexity-driving elements
+  * `single_bit_perturbations/1` - Single-bit flip perturbations
+  * `random_perturbations/3`- Random noise perturbations with configurable noise levels
+  * `calculate_perturbation_effects/3`, `perturbation_landscape/3` - More insight into the perturbation behavior
+  * `sensitivity_profile/2`, `detect_critical_positions/2`, `stability_coefficient/4` - Comprehensive sensitivity analysis
 
 ## Usage
 
