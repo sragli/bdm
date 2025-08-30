@@ -18,15 +18,10 @@ end
 
 ## Key Features
 
-### Core BDM Implementation
-
 * Supports both 1D (binary strings) and 2D (binary matrices) data
-* Two boundary conditions: :ignore and :correlated
+* Two boundary conditions: `:ignore` and `:correlated`
   * Ignore: Discards incomplete blocks
   * Correlated: Uses sliding window approach with fixed window size of 1
-
-### CTM Lookup Tables
-
 * Precomputed CTM values for small binary strings and matrices
   * 1D lists, with maximum block size 11
   * 2D matrices with maximum block size 4*4
