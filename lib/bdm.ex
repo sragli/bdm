@@ -3,13 +3,14 @@ defmodule BDM do
   Block Decomposition Method (BDM) implementation for approximating algorithmic complexity.
   """
 
-  defstruct [:ndim, :nsymbols, :block_size, :boundary, :ctm_data, :warn_missing]
+  defstruct [:ndim, :nsymbols, :block_size, :boundary, :backend, :ctm_data, :warn_missing]
 
   @type t :: %__MODULE__{
           ndim: 1 | 2,
           nsymbols: integer(),
           block_size: integer(),
           boundary: boundary_condition(),
+          backend: :ctm | :lzc,
           ctm_data: map(),
           warn_missing: boolean()
         }
@@ -26,6 +27,7 @@ defmodule BDM do
   - `nsymbols`: Number of symbols (2 for binary)
   - `block_size`: Size of blocks for decomposition
   - `boundary`: Boundary condition (:ignore, :correlated)
+  - `backend`: CTM (default) or LZC
   - `ctm_data`: Optional custom CTM lookup table
   - `warn_missing`: Whether to warn about missing CTM values
 
@@ -33,14 +35,15 @@ defmodule BDM do
       iex> BDM.new(1, 2, 2)
       %BDM{ndim: 1, nsymbols: 2, block_size: 2, ctm_data: ..., warn_missing: true}
   """
-  @spec new(integer(), integer(), integer(), boundary_condition(), map() | nil, boolean()) :: t()
-  def new(ndim, nsymbols, block_size, boundary \\ :ignore, ctm_data \\ nil, warn_missing \\ true) do
+  @spec new(integer(), integer(), integer(), boundary_condition(), :ctm | :lzc, map() | nil, boolean()) :: t()
+  def new(ndim, nsymbols, block_size, boundary \\ :ignore, backend \\ :ctm, ctm_data \\ nil, warn_missing \\ true) do
     %__MODULE__{
       ndim: ndim,
       nsymbols: nsymbols,
       block_size: block_size,
       boundary: boundary,
-      ctm_data: ctm_data || load_ctm_data(ndim, block_size),
+      backend: backend,
+      ctm_data: if(backend == :ctm, do: ctm_data || load_ctm_data(ndim, block_size)),
       warn_missing: warn_missing
     }
   end
@@ -163,15 +166,26 @@ defmodule BDM do
   # Looks up CTM values for blocks and aggregates them using BDM formula.
   #
   @spec lookup_and_aggregate(list(binary_string() | binary_matrix()), t()) :: float()
-  defp lookup_and_aggregate(blocks, %__MODULE__{ctm_data: ctm_data, warn_missing: warn_missing}) do
+  defp lookup_and_aggregate(blocks, %__MODULE__{ctm_data: ctm_data, warn_missing: warn_missing, backend: :ctm}) do
     # Count occurrences of each unique block
     block_counts = Enum.frequencies(blocks)
 
     # Apply BDM formula: sum of CTM(block) + log2(count) for each unique block
     block_counts
     |> Enum.map(fn {block, count} ->
-      ctm_value = get_ctm_value(block, ctm_data, warn_missing)
-      ctm_value + :math.log2(count)
+      get_ctm_value(block, ctm_data, warn_missing) + :math.log2(count)
+    end)
+    |> Enum.sum()
+  end
+
+  defp lookup_and_aggregate(blocks, %__MODULE__{backend: :lzc}) do
+    # Count occurrences of each unique block
+    block_counts = Enum.frequencies(blocks)
+
+    # Apply modified BDM formula: sum of LZC(block) + log2(count) for each unique block
+    block_counts
+    |> Enum.map(fn {block, count} ->
+      BDM.LZC2D.lzc(block) + :math.log2(count)
     end)
     |> Enum.sum()
   end

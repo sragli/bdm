@@ -1,3 +1,7 @@
+## [0.3.2] - 2025-09-13
+### Added
+- Backend could be selected for BDM. The default is CTM, Lempel–Ziv Complexity (LZC) is an option. Useful for large 2D matrices
+
 ## [0.3.1] - 2025-08-29
 ### Fixed
 - Added missing CTM values
