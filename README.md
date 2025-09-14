@@ -22,7 +22,7 @@ end
 * Two boundary conditions: `:ignore` and `:correlated`
   * Ignore: Discards incomplete blocks
   * Correlated: Uses sliding window approach with fixed window size of 1
-* Backend could be selected for BDM. The default is CTM, Lempel–Ziv Complexity (LZC) is an option. Useful for large 2D matrices
+* Backend could be selected for BDM using the `backend` option. The default is CTM (`:ctm`), Lempel–Ziv Complexity (`:lzc`) [Kaspar, Schuster, 1987] is a performant, but less accurate alternative. Useful for large data sets
 * Precomputed CTM values for small binary strings and matrices
   * 1D lists, with maximum block size 11
   * 2D matrices with maximum block size 4*4
