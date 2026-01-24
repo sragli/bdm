@@ -1,3 +1,7 @@
+## [0.5.0] - 2026-01-24
+### Added
+- Implemented the Minimal Information Loss algorithm for feature selection and dimension reduction.
+
 ## [0.4.0] - 2025-09-13
 ### Added
 - Backend could be selected for BDM. The default is CTM, Lempel–Ziv Complexity (LZC) is an option. Useful for large 2D matrices

@@ -16,8 +16,8 @@ defmodule BDM do
         }
 
   @type boundary_condition :: :ignore | :correlated
-  @type binary_matrix :: list(list(integer())) | Nx.Tensor.t()
-  @type binary_string :: list(integer())
+  @type binary_matrix :: [[0 | 1]] | Nx.Tensor.t()
+  @type binary_string :: [0 | 1]
 
   @doc """
   Creates a new BDM instance.
@@ -35,8 +35,24 @@ defmodule BDM do
       iex> BDM.new(1, 2, 2)
       %BDM{ndim: 1, nsymbols: 2, block_size: 2, ctm_data: ..., warn_missing: true}
   """
-  @spec new(integer(), integer(), integer(), boundary_condition(), :ctm | :lzc, map() | nil, boolean()) :: t()
-  def new(ndim, nsymbols, block_size, boundary \\ :ignore, backend \\ :ctm, ctm_data \\ nil, warn_missing \\ true) do
+  @spec new(
+          integer(),
+          integer(),
+          integer(),
+          boundary_condition(),
+          :ctm | :lzc,
+          map() | nil,
+          boolean()
+        ) :: t()
+  def new(
+        ndim,
+        nsymbols,
+        block_size,
+        boundary \\ :ignore,
+        backend \\ :ctm,
+        ctm_data \\ nil,
+        warn_missing \\ true
+      ) do
     %__MODULE__{
       ndim: ndim,
       nsymbols: nsymbols,
@@ -166,7 +182,11 @@ defmodule BDM do
   # Looks up CTM values for blocks and aggregates them using BDM formula.
   #
   @spec lookup_and_aggregate(list(binary_string() | binary_matrix()), t()) :: float()
-  defp lookup_and_aggregate(blocks, %__MODULE__{ctm_data: ctm_data, warn_missing: warn_missing, backend: :ctm}) do
+  defp lookup_and_aggregate(blocks, %__MODULE__{
+         ctm_data: ctm_data,
+         warn_missing: warn_missing,
+         backend: :ctm
+       }) do
     # Count occurrences of each unique block
     block_counts = Enum.frequencies(blocks)
 
@@ -225,10 +245,12 @@ defmodule BDM do
     |> File.read!()
     |> :erlang.binary_to_term()
     |> Stream.filter(fn {list, _k} -> block_size == trunc(:math.sqrt(length(list))) end)
-    |> Stream.flat_map(fn {list, k} -> [
+    |> Stream.flat_map(fn {list, k} ->
+      [
         {Enum.chunk_every(list, block_size), k},
         {Enum.chunk_every(Enum.map(list, fn x -> 1 - x end), block_size), k}
-      ] end)
+      ]
+    end)
     |> Enum.into(%{})
   end
 end

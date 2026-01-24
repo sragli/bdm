@@ -7,6 +7,8 @@ defmodule BDM.PerturbationAnalysis do
   @doc """
   Generates all possible single-bit flip perturbations of the data.
   """
+  @spec single_bit_perturbations(BDM.t(), BDM.binary_string() | BDM.binary_matrix()) ::
+          BDM.binary_string() | BDM.binary_matrix()
   def single_bit_perturbations(%BDM{ndim: 1}, data) do
     for i <- 0..(length(data) - 1) do
       flip_bit_1d(data, i)
@@ -20,11 +22,17 @@ defmodule BDM.PerturbationAnalysis do
     end
   end
 
-  @spec random_perturbations(BDM.t(), list(), integer(), number()) :: list()
   @doc """
   Generates random perturbations with specified noise level.
   noise_level: fraction of bits to flip (0.0 to 1.0)
   """
+  @spec random_perturbations(
+          BDM.t(),
+          BDM.binary_string() | BDM.binary_matrix(),
+          pos_integer(),
+          number()
+        ) ::
+          BDM.binary_string() | BDM.binary_matrix()
   def random_perturbations(%BDM{ndim: 1}, data, num_perturbations, noise_level) do
     data_length = length(data)
     num_flips = round(data_length * noise_level)
@@ -53,6 +61,8 @@ defmodule BDM.PerturbationAnalysis do
   @doc """
   Calculates BDM for original and all perturbed versions.
   """
+  @spec calculate_perturbation_effects(BDM.t(), BDM.binary_string() | BDM.binary_matrix(), list()) ::
+          {float(), list(map())}
   def calculate_perturbation_effects(bdm, original_data, perturbations) do
     original_bdm = BDM.compute(bdm, original_data)
 
@@ -78,6 +88,7 @@ defmodule BDM.PerturbationAnalysis do
   @doc """
   Creates a sensitivity profile showing which positions are most sensitive to perturbation.
   """
+  @spec sensitivity_profile(BDM.t(), BDM.binary_string() | BDM.binary_matrix()) :: list(map())
   def sensitivity_profile(bdm, data) do
     single_perturbations = single_bit_perturbations(bdm, data)
     {_, results} = calculate_perturbation_effects(bdm, data, single_perturbations)
@@ -95,6 +106,7 @@ defmodule BDM.PerturbationAnalysis do
   @doc """
   Identifies positions where perturbation sensitivity exceeds threshold.
   """
+  @spec detect_critical_positions(list(map()), number()) :: list(map())
   def detect_critical_positions(sensitivity_profile, threshold \\ 1.0) do
     sensitivity_profile
     |> Enum.filter(fn point -> point.sensitivity > threshold end)
@@ -103,7 +115,12 @@ defmodule BDM.PerturbationAnalysis do
 
   @doc """
   Creates a landscape showing cumulative effects of multi-bit perturbations.
+
+  Returns max_effect, min_effect, and avg_effect for each flip count, providing more insight
+  into the perturbation behavior.
   """
+  @spec perturbation_landscape(BDM.t(), BDM.binary_string() | BDM.binary_matrix(), integer()) ::
+          list(map())
   def perturbation_landscape(%BDM{ndim: 1} = bdm, data, radius) do
     original_bdm = BDM.compute(bdm, data)
 
@@ -141,10 +158,6 @@ defmodule BDM.PerturbationAnalysis do
     end
   end
 
-  #
-  # Returns max_effect, min_effect, and avg_effect for each flip count, providing more insight
-  # into the perturbation behavior.
-  #
   def perturbation_landscape(%BDM{ndim: 2} = bdm, data, radius) do
     original_bdm = BDM.compute(bdm, data)
 
@@ -194,6 +207,12 @@ defmodule BDM.PerturbationAnalysis do
   @doc """
   Calculates stability coefficient: ratio of consistent complexity estimates.
   """
+  @spec stability_coefficient(
+          BDM.t(),
+          BDM.binary_string() | BDM.binary_matrix(),
+          pos_integer(),
+          number()
+        ) :: map()
   def stability_coefficient(bdm, data, num_trials \\ 50, noise_level \\ 0.1) do
     original_bdm = BDM.compute(bdm, data)
 

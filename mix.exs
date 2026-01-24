@@ -37,14 +37,15 @@ defmodule BDM.MixProject do
   defp docs() do
     [
       main: "BDM",
-      extras: ["README.md", "LICENSE", "examples.livemd", "CHANGELOG"]
+      extras: ["README.md", "LICENSE", "livebooks/examples.livemd", "CHANGELOG"]
     ]
   end
 
   defp deps do
     [
       {:nx, "~> 0.10.0"},
-      {:ex_doc, ">= 0.0.0", only: :dev, runtime: false}
+      {:ex_doc, ">= 0.0.0", only: :dev, runtime: false},
+      {:dialyxir, "~> 1.2", only: [:dev], runtime: false}
     ]
   end
 end

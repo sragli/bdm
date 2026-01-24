@@ -37,6 +37,9 @@ end
   * `random_perturbations/3`- Random noise perturbations with configurable noise levels
   * `calculate_perturbation_effects/3`, `perturbation_landscape/3` - More insight into the perturbation behavior
   * `sensitivity_profile/2`, `detect_critical_positions/2`, `stability_coefficient/4` - Comprehensive sensitivity analysis
+* `BDM.MinimalInformationLoss` - Minimal Information Loss algorithm for feature selection and dimension reduction
+  * `feature_scores/2`, `select_features/3` - Feature scoring based on the change in the object’s estimated algorithmic information content
+  * `reduce_dimensions/2` - Dimension reduction based on feature selection
 
 ## Usage
 
@@ -117,6 +120,7 @@ The method essentially transforms an intractable global computation into a serie
 ## Citations
 
 * Soler-Toscano F., Zenil H., Delahaye J.-P. and Gauvrit N. (2014) Calculating Kolmogorov Complexity from the Output Frequency Distributions of Small Turing Machines. [PLoS ONE 9(5): e96223](http://www.plosone.org/article/info%3Adoi%2F10.1371%2Fjournal.pone.0096223).
-* Zenil H., Soler-Toscano F., Kiani N.A., Hernández-Orozco S., Rueda-Toicen A. (2016) A Decomposition Method for Global Evaluation of Shannon Entropy and Local Estimations of Algorithmic Complexity, [arXiv:1609.00110](https://arxiv.org/abs/1609.00110)
+* Zenil H., Soler-Toscano F., Kiani N.A., Hernández-Orozco S., Rueda-Toicen A. (2016) A Decomposition Method for Global Evaluation of Shannon Entropy and Local Estimations of Algorithmic Complexity. [arXiv:1609.00110](https://arxiv.org/abs/1609.00110)
 * Zenil H, Kiani NA, Tegnér J. Algorithmic Information Dynamics: [A Computational Approach to Causality with Applications to Living Systems](https://www.cambridge.org/core/books/algorithmic-information-dynamics/6ABDAD480E710BAD5180CED0C4822BDB). Cambridge University Press; 2023.
 * F. Kaspar, H. G. Schuster (1987) Easily calculable measure for the complexity of spatiotemporal patterns. [Phys. Rev. A 36, 842](https://doi.org/10.1103/PhysRevA.36.842)
+* Hector Zenil and Narsis A. Kiani and Alyssa Adams and Felipe S. Abrahão and Antonio Rueda-Toicen and Allan A. Zea and Luan Ozelim and Jesper Tegnér (2018) Minimal Algorithmic Information Loss Methods for Dimension Reduction, Feature Selection and Network Sparsification. [arXiv:1802.05843](https://arxiv.org/abs/1802.05843)

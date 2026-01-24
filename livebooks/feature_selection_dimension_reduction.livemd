@@ -1,0 +1,351 @@
+# MILS Feature Selection & Dimension Reduction with `:bdm`
+
+```elixir
+Mix.install([
+  {:bdm, "~> 0.4.0"},
+  {:nx, "~> 0.7"}
+])
+```
+
+## Setup
+
+This Livebook demonstrates feature selection and dimension reduction methods based on minimal algorithmic information loss (MILS).
+
+<!-- livebook:{"break_markdown":true} -->
+
+We will use:
+
+* `BDM.new/7` to create a BDM instance
+* `BDM.compute/2` to estimate complexity
+
+## Helpers: binarization, matrix utilities
+
+`BDM` expects **binary** data (`0`/`1`) as a list (1D) or list of lists / `Nx.Tensor` (2D).
+
+Below is a small helper module to:
+
+* binarize numeric data by threshold
+* generate toy datasets
+* drop / keep columns
+
+```elixir
+defmodule MILS.Utils do
+  @moduledoc false
+
+  @doc """
+  Binarize a matrix (list of rows) by per-column thresholds.
+
+  - `x >= threshold` -> 1
+  - else -> 0
+
+  `thresholds` may be:
+
+  - a single number (applied to all columns), or
+  - a list of length = num_cols.
+  """
+  def binarize_matrix(rows, thresholds) when is_list(rows) do
+    ncols = rows |> hd() |> length()
+
+    ths =
+      cond do
+        is_number(thresholds) -> List.duplicate(thresholds, ncols)
+        is_list(thresholds) and length(thresholds) == ncols -> thresholds
+        true -> raise ArgumentError, "thresholds must be a number or a list of length #{ncols}"
+      end
+
+    Enum.map(rows, fn row ->
+      Enum.zip_with(row, ths, fn x, t -> if x >= t, do: 1, else: 0 end)
+    end)
+  end
+
+  @doc """
+  Drop a single column index (0-based).
+  """
+  def drop_col(rows, j) do
+    Enum.map(rows, fn row -> List.delete_at(row, j) end)
+  end
+
+  @doc """
+  Keep a list of column indices (0-based), in that order.
+  """
+  def keep_cols(rows, js) do
+    Enum.map(rows, fn row -> Enum.map(js, &Enum.at(row, &1)) end)
+  end
+
+  @doc """
+  Return number of columns.
+  """
+  def ncols(rows), do: rows |> hd() |> length()
+
+  @doc """
+  Return number of rows.
+  """
+  def nrows(rows), do: length(rows)
+
+  @doc """
+  enerate a simple toy dataset with a few redundant and informative features.
+  """
+  def toy_binary_dataset(n_rows \\ 80, seed \\ 42) do
+    :rand.seed(:exsss, {seed, seed + 1, seed + 2})
+
+    # latent signals
+    s1 = for _ <- 1..n_rows, do: if(:rand.uniform() < 0.5, do: 0, else: 1)
+    s2 = for _ <- 1..n_rows, do: if(:rand.uniform() < 0.5, do: 0, else: 1)
+
+    # features
+    f0 = s1
+    f1 = s2
+    f2 = Enum.zip_with(s1, s2, fn a, b -> bxor(a, b) end)         # mixed signal
+    f3 = Enum.map(s1, fn a -> if(:rand.uniform() < 0.1, do: 1 - a, else: a) end) # noisy copy of s1
+    f4 = Enum.map(s1, fn a -> a end)                              # exact duplicate of f0
+    f5 = for _ <- 1..n_rows, do: if(:rand.uniform() < 0.5, do: 0, else: 1)      # pure noise
+
+    # rows as samples
+    Enum.zip([f0, f1, f2, f3, f4, f5])
+    |> Enum.map(&Tuple.to_list/1)
+  end
+
+  defp bxor(a, b) when a in [0, 1] and b in [0, 1], do: Bitwise.bxor(a, b)
+end
+```
+
+## Optional: binarize real-valued data
+
+If your data is not binary, one simple approach is to binarize each column by its median (or any threshold you pick).
+
+```elixir
+defmodule MILS.Binarize do
+  @moduledoc false
+
+  def bin(x, t) when is_number(x) and is_number(t), do: if(x >= t, do: 1, else: 0)
+
+  def transpose([]), do: []
+  def transpose([row | _] = rows) do
+    0..(length(row) - 1)
+    |> Enum.map(fn j -> Enum.map(rows, &Enum.at(&1, j)) end)
+  end
+
+  def col_medians(rows) do
+    rows
+    |> transpose()
+    |> Enum.map(fn col ->
+      sorted = Enum.sort(col)
+      n = length(sorted)
+      mid = div(n, 2)
+
+      if rem(n, 2) == 1 do
+        Enum.at(sorted, mid)
+      else
+        (Enum.at(sorted, mid - 1) + Enum.at(sorted, mid)) / 2
+      end
+    end)
+  end
+
+  def binarize(rows, thresholds \\ nil) do
+    thresholds = thresholds || col_medians(rows)
+
+    Enum.map(rows, fn row ->
+      row
+      |> Enum.zip(thresholds)
+      |> Enum.map(fn {x, t} -> bin(x, t) end)
+    end)
+  end
+end
+```
+
+## MILS algorithms (implementation)
+
+We treat a dataset as a binary **samples x features** matrix.
+
+**Feature score** = how much BDM complexity changes when the feature is removed.
+
+* Small change ⇒ feature is (approximately) redundant.
+* Large change ⇒ feature contributes more algorithmic information.
+
+We provide:
+
+* `feature_scores/2` — score all features
+* `select_features_greedy/3` — greedy removal to reach `k` features
+* `reduce_dimensions/3` — helper that returns reduced matrix + selected indices
+
+```elixir
+defmodule MILS do
+  @moduledoc false
+
+  alias MILS.Utils
+
+  @doc """
+  Compute baseline complexity of a binary matrix.
+
+  By default we use a 2D BDM configured for binary matrices.
+  """
+  def complexity(bdm, rows) do
+    BDM.compute(bdm, rows)
+  end
+
+  @doc """
+  Score each feature by complexity change when removing it.
+
+  Returns a list of maps:
+
+      [%{idx: 0, delta: 1.23, base: 10.0, removed: 8.77}, ...]
+
+  `delta = base - removed` (non-negative in most cases).
+  """
+  def feature_scores(bdm, rows) do
+    base = complexity(bdm, rows)
+    n = Utils.ncols(rows)
+
+    for j <- 0..(n - 1) do
+      reduced = Utils.drop_col(rows, j)
+      c = complexity(bdm, reduced)
+      %{idx: j, delta: base - c, base: base, removed: c}
+    end
+    |> Enum.sort_by(& &1.delta, :desc)
+  end
+
+  @doc """
+  Greedy MILS feature selection.
+
+  We iteratively remove the feature with the **smallest** delta until `k` remain.
+
+  Returns `{kept_indices, history}` where history logs each removal.
+  """
+  def select_features_greedy(bdm, rows, k) when is_integer(k) and k > 0 do
+    n = Utils.ncols(rows)
+    if k > n do
+      raise ArgumentError, "k (#{k}) must be <= number of columns (#{n})"
+    end
+
+    kept = MapSet.new(0..(n - 1))
+    history = []
+
+    do_select(bdm, rows, k, kept, history)
+  end
+
+  defp do_select(bdm, rows, k, kept, history) do
+    kept_list = kept |> Enum.sort()
+
+    if length(kept_list) == k do
+      {kept_list, Enum.reverse(history)}
+    else
+      sub = Utils.keep_cols(rows, kept_list)
+      scores = feature_scores(bdm, sub)
+
+      # scores are for the *submatrix* column indices; map them back to original indices
+      # we remove the smallest-delta column to minimize information loss
+      worst = scores |> Enum.min_by(& &1.delta)
+      remove_orig_idx = Enum.at(kept_list, worst.idx)
+
+      new_kept = MapSet.delete(kept, remove_orig_idx)
+
+      step = %{
+        removed: remove_orig_idx,
+        delta: worst.delta,
+        base: worst.base,
+        after: worst.removed,
+        remaining: new_kept |> Enum.sort()
+      }
+
+      do_select(bdm, rows, k, new_kept, [step | history])
+    end
+  end
+
+  @doc """
+  Reduce a matrix to `k` features using greedy MILS selection.
+
+  Returns `%{kept: [...], reduced: rows_k, history: [...]}`.
+  """
+  def reduce_dimensions(bdm, rows, k) do
+    {kept, history} = select_features_greedy(bdm, rows, k)
+    %{kept: kept, reduced: Utils.keep_cols(rows, kept), history: history}
+  end
+end
+```
+
+## Example 1: feature selection on a toy binary dataset
+
+We create a dataset with 6 binary features:
+
+* `f0` and `f4` are exact duplicates
+* `f3` is a noisy copy of `f0`
+* `f5` is pure noise
+
+```elixir
+rows = MILS.Utils.toy_binary_dataset(120, 123)
+{MILS.Utils.nrows(rows), MILS.Utils.ncols(rows)}
+```
+
+Compute a BDM estimate on the dataset and score each feature by **removal loss**.
+
+```elixir
+bdm = BDM.new(2, 2, 4, :ignore, :ctm)
+
+base = BDM.compute(bdm, rows)
+IO.puts("Base complexity: #{Float.round(base, 4)}")
+
+scores = MILS.feature_scores(bdm, rows)
+Enum.sort_by(scores, & &1.delta, :desc)
+```
+
+Greedy selection down to `k=3` features.
+
+```elixir
+{kept, history} = MILS.select_features_greedy(bdm, rows, 3)
+%{kept: kept, history: Enum.reverse(history)}
+```
+
+Compare the complexity of:
+
+* original data
+* reduced data
+
+```elixir
+reduced = MILS.Utils.keep_cols(rows, kept)
+
+%{
+  base: BDM.compute(bdm, rows),
+  reduced: BDM.compute(bdm, reduced),
+  kept: kept
+}
+```
+
+## Example 2: numeric data -> binarize -> reduce
+
+Here we synthesize 2D numeric data, binarize by column medians, then reduce to `k` dimensions.
+
+```elixir
+# Make a simple numeric dataset: 3 informative columns + 2 redundant/noisy
+n = 200
+:rand.seed(:exsss, {7, 8, 9})
+
+s1 = for _ <- 1..n, do: :rand.normal()
+s2 = for _ <- 1..n, do: :rand.normal()
+s3 = for _ <- 1..n, do: :rand.normal()
+
+# columns
+c0 = s1
+c1 = s2
+c2 = Enum.zip_with(s1, s3, fn a, b -> 0.7*a + 0.3*b end)  # mixed
+c3 = Enum.map(s1, &(&1 + 0.05*:rand.normal()))              # near-duplicate of c0
+c4 = for _ <- 1..n, do: :rand.normal()                      # noise
+
+rows_num = Enum.zip([c0, c1, c2, c3, c4]) |> Enum.map(&Tuple.to_list/1)
+
+rows_bin = MILS.Binarize.binarize(rows_num)
+{MILS.Utils.nrows(rows_bin), MILS.Utils.ncols(rows_bin)}
+```
+
+Now run MAI-L greedy dimension reduction.
+
+```elixir
+bdm = BDM.new(2, 2, 4, :ignore, :ctm)
+result = MILS.reduce_dimensions(bdm, rows_bin, 3)
+result.kept
+```
+
+Show what got removed at each step.
+
+```elixir
+result.history
+```
