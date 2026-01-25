@@ -3,7 +3,6 @@ defmodule BDM.MinimalInformationLossTest do
   alias BDM.MinimalInformationLoss
 
   setup do
-    # Use a simple BDM struct for tests (assuming BDM.new/3 is available)
     bdm = BDM.new(2, 2, 2)
     {:ok, bdm: bdm}
   end
@@ -23,13 +22,10 @@ defmodule BDM.MinimalInformationLossTest do
       [1, 0]
     ]
 
-    scores = MinimalInformationLoss.feature_scores(bdm, rows)
-    assert is_list(scores)
-    assert Enum.all?(scores, &is_map/1)
-    assert Enum.all?(scores, &Map.has_key?(&1, :delta))
-    assert Enum.all?(scores, &Map.has_key?(&1, :base))
-    assert Enum.all?(scores, &Map.has_key?(&1, :removed))
-    assert Enum.all?(scores, &Map.has_key?(&1, :idx))
+    [
+      %{delta: _, base: _, removed: _, idx: _},
+      %{delta: _, base: _, removed: _, idx: _}
+    ] = MinimalInformationLoss.feature_scores(bdm, rows)
   end
 
   test "select_features returns kept indices and history", %{bdm: bdm} do

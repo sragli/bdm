@@ -8,7 +8,7 @@ defmodule BDM.MinimalInformationLoss do
   """
 
   @doc """
-  Compute baseline complexity of a binary matrix.
+  Computes baseline complexity of a binary matrix.
 
   By default we use a 2D BDM configured for binary matrices.
   """
@@ -18,7 +18,7 @@ defmodule BDM.MinimalInformationLoss do
   end
 
   @doc """
-  Score each feature based on the change in the object’s estimated algorithmic
+  Scores each feature based on the change in the object’s estimated algorithmic
   information content after the removal of the feature.
 
   Returns a list of maps:
@@ -71,7 +71,7 @@ defmodule BDM.MinimalInformationLoss do
       scores = feature_scores(bdm, sub)
 
       # scores are for the *submatrix* column indices; map them back to original indices
-      # we remove the smallest-delta column to minimize information loss
+      # removing the smallest-delta column to minimize information loss
       worst = scores |> Enum.min_by(& &1.delta)
       remove_orig_idx = Enum.at(kept_list, worst.idx)
 
@@ -90,7 +90,7 @@ defmodule BDM.MinimalInformationLoss do
   end
 
   @doc """
-  Reduce a matrix to `k` features using greedy selection.
+  Reduces a matrix to `k` features using greedy selection.
 
   Returns `%{kept: [...], reduced: rows_k, history: [...]}`.
   """
@@ -104,16 +104,16 @@ defmodule BDM.MinimalInformationLoss do
     %{kept: kept, reduced: keep_cols(rows, kept), history: history}
   end
 
-  # Drop a single column index (0-based).
+  # Drops a single column index (0-based).
   defp drop_col(rows, j) do
     Enum.map(rows, fn row -> List.delete_at(row, j) end)
   end
 
-  # Keep a list of column indices (0-based), in that order.
+  # Keeps a list of column indices (0-based), in that order.
   defp keep_cols(rows, js) do
     Enum.map(rows, fn row -> Enum.map(js, &Enum.at(row, &1)) end)
   end
 
-  # Return number of columns.
+  # Returns number of columns.
   defp ncols(rows), do: rows |> hd() |> length()
 end
