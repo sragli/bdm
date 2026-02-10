@@ -117,6 +117,10 @@ If the object’s size is not a multiple of the block size, the boundary (or res
 
 The method essentially transforms an intractable global computation into a series of fast local lookups, making algorithmic complexity estimation practical for real-world datasets.
 
+## How Minimal Information Loss Works
+
+The Minimal Information Loss algorithm selects features or reduces dimensions by iteratively removing the feature whose removal results in the smallest increase in the estimated algorithmic complexity (as measured by BDM). This process aims to preserve as much of the original information content as possible while reducing the number of features. It is useful for identifying the most informative features in a dataset, enabling effective feature selection and dimensionality reduction based on algorithmic information theory.
+
 ## Citations
 
 * Soler-Toscano F., Zenil H., Delahaye J.-P. and Gauvrit N. (2014) Calculating Kolmogorov Complexity from the Output Frequency Distributions of Small Turing Machines. [PLoS ONE 9(5): e96223](http://www.plosone.org/article/info%3Adoi%2F10.1371%2Fjournal.pone.0096223).
