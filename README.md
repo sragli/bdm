@@ -58,7 +58,7 @@ large_matrix = [
 complexity_2x2 = BDM.compute(bdm, large_matrix)
 ```
 
-For more details and explanations, check the [Livebook](examples.livemd).
+For more details and explanations, check the [Livebook](/livebooks/examples.livemd).
 
 ## How BDM Works
 
