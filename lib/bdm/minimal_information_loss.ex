@@ -61,6 +61,10 @@ defmodule BDM.MinimalInformationLoss do
     do_select(bdm, rows, k, kept, history)
   end
 
+  def select_features(_bdm, _rows, k) do
+    raise ArgumentError, "k (#{k}) must be integer and > 0"
+  end
+
   defp do_select(bdm, rows, k, kept, history) do
     kept_list = kept |> Enum.sort()
 

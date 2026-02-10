@@ -9,8 +9,8 @@ defmodule BDM.MinimalInformationLossTest do
 
   test "complexity returns BDM.compute result", %{bdm: bdm} do
     rows = [
-      [0, 1],
-      [1, 0]
+      [0, 1, 0],
+      [1, 0, 1]
     ]
 
     assert MinimalInformationLoss.complexity(bdm, rows) == BDM.compute(bdm, rows)
@@ -18,11 +18,12 @@ defmodule BDM.MinimalInformationLossTest do
 
   test "feature_scores returns correct deltas", %{bdm: bdm} do
     rows = [
-      [0, 1],
-      [1, 0]
+      [0, 1, 0],
+      [1, 0, 1]
     ]
 
     [
+      %{delta: _, base: _, removed: _, idx: _},
       %{delta: _, base: _, removed: _, idx: _},
       %{delta: _, base: _, removed: _, idx: _}
     ] = MinimalInformationLoss.feature_scores(bdm, rows)

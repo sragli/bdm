@@ -2,7 +2,7 @@
 
 Elixir module that implements the Block Decomposition Method (BDM) developed by Hector Zenil et al to approximate the algorithmic complexity of datasets by decomposing them into smaller blocks and using precomputed CTM (Coding Theorem Method) values.
 
-This implementation is based on [PyBDM](http://github.com/sztal/pybdm) by Szymon Talaga et al.
+The BDM implementation is based on [PyBDM](http://github.com/sztal/pybdm) by Szymon Talaga et al.
 
 ## Installation
 
