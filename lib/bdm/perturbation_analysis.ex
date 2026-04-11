@@ -46,13 +46,12 @@ defmodule BDM.PerturbationAnalysis do
   def random_perturbations(%BDM{ndim: 2}, data, num_perturbations, noise_level) do
     data_length = length(data)
     data_width = length(hd(data))
-    num_flips = round(data_length * noise_level)
+    num_flips = round(data_length * data_width * noise_level)
 
     for _ <- 1..num_perturbations do
-      positions = {
-        Enum.take_random(0..(data_width - 1), num_flips),
-        Enum.take_random(0..(data_length - 1), num_flips)
-      }
+      row_positions = Enum.take_random(0..(data_length - 1), num_flips)
+      col_positions = Enum.take_random(0..(data_width - 1), num_flips)
+      positions = Enum.zip(row_positions, col_positions)
 
       flip_positions_2d(data, positions)
     end

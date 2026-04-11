@@ -1,3 +1,9 @@
+## [0.6.0] - 2026-04-11
+### Fixed
+- Fixed `random_perturbations/4` for 2D: positions were built as a tuple instead of a list of `{row, col}` pairs, causing a runtime `Protocol.UndefinedError`; also corrected `num_flips` to use total cell count instead of row count only
+### Changed
+- `load_ctm_data/2` for 2D now indexes all 8 dihedral-group symmetries (rotations and reflections) of each block, plus their bit-complements, reducing CTM cache misses
+
 ## [0.5.0] - 2026-01-24
 ### Added
 - Implemented the Minimal Information Loss algorithm for feature selection and dimension reduction.

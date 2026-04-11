@@ -246,11 +246,49 @@ defmodule BDM do
     |> :erlang.binary_to_term()
     |> Stream.filter(fn {list, _k} -> block_size == trunc(:math.sqrt(length(list))) end)
     |> Stream.flat_map(fn {list, k} ->
-      [
-        {Enum.chunk_every(list, block_size), k},
-        {Enum.chunk_every(Enum.map(list, fn x -> 1 - x end), block_size), k}
-      ]
+      matrix = Enum.chunk_every(list, block_size)
+      complement = Enum.map(matrix, fn row -> Enum.map(row, fn x -> 1 - x end) end)
+
+      (matrix_symmetries(matrix) ++ matrix_symmetries(complement))
+      |> Enum.uniq()
+      |> Enum.map(&{&1, k})
     end)
     |> Enum.into(%{})
   end
+
+  # Returns the 8 members of the dihedral group D4 applied to a square matrix.
+  defp matrix_symmetries(m) do
+    [
+      m,
+      rotate_90(m),
+      rotate_180(m),
+      rotate_270(m),
+      flip_h(m),
+      flip_v(m),
+      transpose_m(m),
+      anti_transpose(m)
+    ]
+    |> Enum.uniq()
+  end
+
+  # Rotate 90° clockwise: transpose then reverse each row.
+  defp rotate_90(m), do: m |> transpose_m() |> Enum.map(&Enum.reverse/1)
+
+  # Rotate 180°: reverse row order then reverse each row.
+  defp rotate_180(m), do: m |> Enum.reverse() |> Enum.map(&Enum.reverse/1)
+
+  # Rotate 270° clockwise: reverse each row then transpose.
+  defp rotate_270(m), do: m |> Enum.map(&Enum.reverse/1) |> transpose_m()
+
+  # Flip top-to-bottom (horizontal axis).
+  defp flip_h(m), do: Enum.reverse(m)
+
+  # Flip left-to-right (vertical axis).
+  defp flip_v(m), do: Enum.map(m, &Enum.reverse/1)
+
+  # Transpose along the main diagonal: new[i][j] = old[j][i].
+  defp transpose_m(m), do: Enum.zip_with(m, & &1)
+
+  # Transpose along the anti-diagonal: new[i][j] = old[n-1-j][n-1-i].
+  defp anti_transpose(m), do: m |> Enum.reverse() |> Enum.map(&Enum.reverse/1) |> transpose_m()
 end
