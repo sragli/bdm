@@ -26,7 +26,20 @@ defmodule BDM.MinimalInformationLossTest do
       %{delta: _, base: _, removed: _, idx: _},
       %{delta: _, base: _, removed: _, idx: _},
       %{delta: _, base: _, removed: _, idx: _}
-    ] = MinimalInformationLoss.feature_scores(bdm, rows)
+    ] = scores = MinimalInformationLoss.feature_scores(bdm, rows)
+
+    assert Enum.all?(scores, &(&1.delta == &1.base - &1.removed))
+  end
+
+  test "feature scores preserve negative losses when removal raises complexity" do
+    bdm =
+      BDM.new(2, 2, 2, :ignore, :ctm, %{[[0, 0], [0, 0]] => -1.0}, false)
+
+    [score | _] = MinimalInformationLoss.feature_scores(bdm, [[0, 0], [0, 0]])
+
+    assert score.base == -1.0
+    assert score.removed == 0.0
+    assert score.delta == -1.0
   end
 
   test "select_features returns kept indices and history", %{bdm: bdm} do
@@ -49,6 +62,16 @@ defmodule BDM.MinimalInformationLossTest do
 
     assert_raise ArgumentError, fn ->
       MinimalInformationLoss.select_features(bdm, rows, 3)
+    end
+  end
+
+  test "feature selection rejects empty and ragged matrices", %{bdm: bdm} do
+    assert_raise ArgumentError, fn ->
+      MinimalInformationLoss.feature_scores(bdm, [])
+    end
+
+    assert_raise ArgumentError, fn ->
+      MinimalInformationLoss.select_features(bdm, [[0, 1], [1]], 1)
     end
   end
 

@@ -11,7 +11,7 @@ The package can be installed by adding `bdm` to your list of dependencies in `mi
 ```elixir
 def deps do
   [
-    {:bdm, "~> 0.6.0"}
+    {:bdm, "~> 0.7.0"}
   ]
 end
 ```
@@ -22,7 +22,7 @@ end
 * Two boundary conditions: `:ignore` and `:correlated`
   * Ignore: Discards incomplete blocks
   * Correlated: Uses sliding window approach with fixed window size of 1
-* Backend could be selected for BDM using the `backend` option. The default is CTM (`:ctm`), Lempel–Ziv Complexity (`:lzc`) [Kaspar, Schuster, 1987] is a performant, but less accurate alternative. Useful for large data sets
+* Backend could be selected for BDM using the `backend` option. The default is CTM (`:ctm`); Lempel–Ziv 1976 phrase complexity (`:lzc`) is an alternative. For matrices, `:lzc` flattens rows in row-major order and does not preserve spatial structure.
 * Precomputed CTM values for small binary strings and matrices
   * 1D lists, with maximum block size 11
   * 2D matrices with maximum block size 4*4
@@ -33,13 +33,14 @@ end
 * `BDM.new/6` - Creates a new BDM analysis structure
 * `BDM.compute/2` - Computes the BDM complexity of a dataset. The input argument can either be a 1D list, a 2D matrix (list of lists) or an `%Nx.Tensor{}`
 * `BDM.PerturbationAnalysis` - Performs perturbation analysis, identifies complexity-driving elements
-  * `single_bit_perturbations/1` - Single-bit flip perturbations
-  * `random_perturbations/3`- Random noise perturbations with configurable noise levels
+  * `single_bit_perturbations/2` - Single-bit flip perturbations
+  * `random_perturbations/4` - Random noise perturbations with configurable noise levels; 2D noise samples distinct cells
   * `calculate_perturbation_effects/3`, `perturbation_landscape/3` - More insight into the perturbation behavior
   * `sensitivity_profile/2`, `detect_critical_positions/2`, `stability_coefficient/4` - Comprehensive sensitivity analysis
+  * Relative changes are `nil` when the original complexity is zero; landscape statistics report whether they use a bounded random sample.
 * `BDM.MinimalInformationLoss` - Minimal Information Loss algorithm for feature selection and dimension reduction
-  * `feature_scores/2`, `select_features/3` - Feature scoring based on the change in the object’s estimated algorithmic information content
-  * `reduce_dimensions/2` - Dimension reduction based on feature selection
+  * `feature_scores/2`, `select_features/3` - Feature scoring based on complexity lost (`base - removed`) when a feature is removed
+  * `reduce_dimensions/3` - Dimension reduction based on feature selection
 
 ## Usage
 

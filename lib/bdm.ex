@@ -8,7 +8,7 @@ defmodule BDM do
   @type t :: %__MODULE__{
           ndim: 1 | 2,
           nsymbols: integer(),
-          block_size: integer(),
+          block_size: pos_integer(),
           boundary: boundary_condition(),
           backend: :ctm | :lzc,
           ctm_data: map(),
@@ -25,7 +25,7 @@ defmodule BDM do
   ## Parameters
   - `ndim`: Dimensionality (1 for strings, 2 for matrices)
   - `nsymbols`: Number of symbols (2 for binary)
-  - `block_size`: Size of blocks for decomposition
+  - `block_size`: Positive integer size of blocks for decomposition
   - `boundary`: Boundary condition (:ignore, :correlated)
   - `backend`: CTM (default) or LZC
   - `ctm_data`: Optional custom CTM lookup table
@@ -36,7 +36,7 @@ defmodule BDM do
       %BDM{ndim: 1, nsymbols: 2, block_size: 2, ctm_data: ..., warn_missing: true}
   """
   @spec new(
-          integer(),
+          pos_integer(),
           integer(),
           integer(),
           boundary_condition(),
@@ -98,7 +98,8 @@ defmodule BDM do
   @doc """
   Partitions 1D data into blocks according to boundary condition.
   """
-  @spec partition_1d(binary_string(), integer(), boundary_condition()) :: list(binary_string())
+  @spec partition_1d(binary_string(), pos_integer(), boundary_condition()) ::
+          list(binary_string())
 
   def partition_1d(data, block_size, :ignore) do
     data
@@ -108,56 +109,113 @@ defmodule BDM do
   def partition_1d(data, block_size, :correlated) do
     data_length = length(data)
 
-    if data_length < block_size do
-      [data]
-    else
-      0..(data_length - block_size)
-      |> Enum.map(&Enum.slice(data, &1, block_size))
+    cond do
+      data_length == 0 ->
+        []
+
+      data_length < block_size ->
+        [data]
+
+      true ->
+        0..(data_length - block_size)
+        |> Enum.map(&Enum.slice(data, &1, block_size))
     end
   end
 
   @doc """
   Partitions 2D data into blocks according to boundary condition.
   """
-  @spec partition_2d(binary_matrix(), integer(), boundary_condition()) :: list(binary_matrix())
+  @spec partition_2d(binary_matrix(), pos_integer(), boundary_condition()) ::
+          list(binary_matrix())
 
   def partition_2d(%Nx.Tensor{} = data, block_size, :ignore) do
-    {rows, cols} = Nx.shape(data)
+    {rows, cols} = tensor_dimensions!(data)
 
-    for i <- 0..(div(rows, block_size) - 1),
-        j <- 0..(div(cols, block_size) - 1) do
-      extract_block(data, i * block_size, j * block_size, block_size, block_size)
-      |> Nx.to_list()
+    if rows < block_size or cols < block_size do
+      []
+    else
+      for i <- 0..(div(rows, block_size) - 1),
+          j <- 0..(div(cols, block_size) - 1) do
+        extract_block(data, i * block_size, j * block_size, block_size, block_size)
+        |> Nx.to_list()
+      end
     end
   end
 
   def partition_2d(data, block_size, :ignore) do
+    validate_matrix!(data)
     rows = length(data)
     cols = if rows > 0, do: length(hd(data)), else: 0
 
-    for i <- 0..(div(rows, block_size) - 1),
-        j <- 0..(div(cols, block_size) - 1) do
-      extract_block(data, i * block_size, j * block_size, block_size, block_size)
+    if rows < block_size or cols < block_size do
+      []
+    else
+      for i <- 0..(div(rows, block_size) - 1),
+          j <- 0..(div(cols, block_size) - 1) do
+        extract_block(data, i * block_size, j * block_size, block_size, block_size)
+      end
     end
   end
 
   def partition_2d(%Nx.Tensor{} = data, block_size, :correlated) do
-    {rows, cols} = Nx.shape(data)
+    {rows, cols} = tensor_dimensions!(data)
 
-    for i <- 0..(rows - block_size),
-        j <- 0..(cols - block_size) do
-      extract_block(data, i, j, block_size, block_size)
-      |> Nx.to_list()
+    if rows < block_size or cols < block_size do
+      []
+    else
+      for i <- 0..(rows - block_size),
+          j <- 0..(cols - block_size) do
+        extract_block(data, i, j, block_size, block_size)
+        |> Nx.to_list()
+      end
     end
   end
 
   def partition_2d(data, block_size, :correlated) do
+    validate_matrix!(data)
     rows = length(data)
     cols = if rows > 0, do: length(hd(data)), else: 0
 
-    for i <- 0..(rows - block_size),
-        j <- 0..(cols - block_size) do
-      extract_block(data, i, j, block_size, block_size)
+    if rows < block_size or cols < block_size do
+      []
+    else
+      for i <- 0..(rows - block_size),
+          j <- 0..(cols - block_size) do
+        extract_block(data, i, j, block_size, block_size)
+      end
+    end
+  end
+
+  defp validate_matrix!(data) when is_list(data) do
+    case data do
+      [] ->
+        :ok
+
+      [first_row | rows] when is_list(first_row) ->
+        width = length(first_row)
+
+        unless Enum.all?(rows, &(is_list(&1) and length(&1) == width)) do
+          raise ArgumentError, "2D input must be a rectangular matrix"
+        end
+
+        :ok
+
+      _ ->
+        raise ArgumentError, "2D input must be a list of rows"
+    end
+  end
+
+  defp validate_matrix!(data) do
+    raise ArgumentError, "2D input must be a list of rows, got: #{inspect(data)}"
+  end
+
+  defp tensor_dimensions!(tensor) do
+    case Nx.shape(tensor) do
+      {rows, cols} ->
+        {rows, cols}
+
+      shape ->
+        raise ArgumentError, "2D input tensor must have rank 2, got shape: #{inspect(shape)}"
     end
   end
 

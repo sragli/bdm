@@ -1,3 +1,11 @@
+## [0.7.0] - 2026-10-23
+### Fixed
+- Corrected 2D block partitioning for inputs smaller than the block size and reject ragged matrices and non-2D tensors.
+- Replaced the faulty LZC routine with LZ76 phrase counting, including defined empty-input behavior.
+- Corrected 2D random perturbations to flip the requested number of distinct cells and handled zero-baseline relative changes.
+- Bounded perturbation landscape combination evaluation using random sampling when needed, and report sampling metadata.
+- Corrected stability dispersion for signed effects and aligned feature-score documentation with the complexity-loss calculation.
+
 ## [0.6.0] - 2026-04-11
 ### Fixed
 - Fixed `random_perturbations/4` for 2D: positions were built as a tuple instead of a list of `{row, col}` pairs, causing a runtime `Protocol.UndefinedError`; also corrected `num_flips` to use total cell count instead of row count only

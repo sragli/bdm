@@ -1,53 +1,62 @@
 defmodule BDM.LZC2D do
   @moduledoc """
-  Compute Lempel–Ziv Complexity (LZC) for 2D matrices.
+  Compute Lempel–Ziv 1976 complexity for sequences and flattened matrices.
   """
 
   @doc """
-  Compute LZC for a binary Nx tensor or a list of lists (2D matrix).
+  Compute LZ76 phrase complexity for an Nx tensor or a list/sequence.
 
   ## Parameters
     - tensor: a 2D Nx tensor or a lists of lists, typically binary (0/1).
-      Non-binary values will be stringified.
+      Matrices are flattened in row-major order. Each list element is treated as
+      one symbol, including non-binary values.
 
   ## Returns
-    - LZC value (positive integer, the count of distinct substrings encountered)
+    - The number of phrases in the LZ76 exhaustive history parsing (zero for empty input)
   """
-  @spec lzc(Nx.Tensor.t()) :: pos_integer()
+  @spec lzc(Nx.Tensor.t()) :: non_neg_integer()
   def lzc(%Nx.Tensor{} = tensor) do
     tensor
     |> Nx.to_flat_list()
     |> lzc()
   end
 
-  @spec lzc(list()) :: pos_integer()
-  def lzc(tensor) do
-    tensor
-    |> Enum.map(&to_string/1)
-    |> Enum.join()
+  @spec lzc(list() | binary()) :: non_neg_integer()
+  def lzc(sequence) when is_binary(sequence) do
+    sequence
+    |> String.graphemes()
     |> lempel_ziv_complexity()
   end
 
-  # Core LZ complexity algorithm for strings
-  defp lempel_ziv_complexity(sequence) when is_binary(sequence) do
-    n = String.length(sequence)
-    do_lzc(sequence, n, 0, 1, 1, 1)
+  def lzc(sequence) when is_list(sequence) do
+    sequence
+    |> List.flatten()
+    |> lempel_ziv_complexity()
   end
 
-  # Recursive implementation of Kaspar & Schuster (1987) algorithm
-  defp do_lzc(_s, n, i, k, l, c) when i + k > n or i + l > n, do: c
+  defp lempel_ziv_complexity([]), do: 0
+  defp lempel_ziv_complexity([_symbol]), do: 1
+  defp lempel_ziv_complexity(sequence), do: do_lzc(sequence, length(sequence), 0, 1, 1, 1, 1)
 
-  defp do_lzc(s, n, i, k, l, c) do
-    sub1 = String.slice(s, i, k)
-    sub2 = String.slice(s, l, k)
+  defp do_lzc(_sequence, n, _i, l, k, _k_max, c) when l + k > n, do: c + 1
 
-    if sub1 == sub2 do
-      do_lzc(s, n, i, k + 1, l, c)
+  defp do_lzc(sequence, n, i, l, k, k_max, c) do
+    if Enum.at(sequence, i + k - 1) == Enum.at(sequence, l + k - 1) do
+      do_lzc(sequence, n, i, l, k + 1, k_max, c)
     else
-      if k > l do
-        do_lzc(s, n, i + k, 1, 1, c + 1)
+      k_max = max(k, k_max)
+      i = i + 1
+
+      if i == l do
+        next_l = l + k_max
+
+        if next_l + 1 > n do
+          c + 1
+        else
+          do_lzc(sequence, n, 0, next_l, 1, 1, c + 1)
+        end
       else
-        do_lzc(s, n, i, 1, l + 1, c)
+        do_lzc(sequence, n, i, l, 1, k_max, c)
       end
     end
   end

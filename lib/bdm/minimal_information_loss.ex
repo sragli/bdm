@@ -25,10 +25,12 @@ defmodule BDM.MinimalInformationLoss do
 
       [%{idx: 0, delta: 1.23, base: 10.0, removed: 8.77}, ...]
 
-  `delta = base - removed` (non-negative in most cases).
+  `delta = base - removed` is the complexity lost by removing the feature. It
+  may be negative when removal increases the estimated complexity.
   """
   @spec feature_scores(BDM.t(), BDM.binary_matrix()) :: list(map())
   def feature_scores(bdm, rows) do
+    validate_features!(rows)
     base = complexity(bdm, rows)
     n = ncols(rows)
 
@@ -41,14 +43,15 @@ defmodule BDM.MinimalInformationLoss do
   end
 
   @doc """
-  Greedy feature selection. Iteratively removing the feature with the
-  **smallest** delta until `k` remain.
+  Greedy feature selection. Iteratively removes the feature with the
+  **smallest complexity loss** (`base - removed`) until `k` remain.
 
   Returns `{kept_indices, history}` where history logs each removal.
   """
   @spec select_features(BDM.t(), BDM.binary_matrix(), pos_integer()) ::
           {list(integer()), list(map())}
   def select_features(bdm, rows, k) when is_integer(k) and k > 0 do
+    validate_features!(rows)
     n = ncols(rows)
 
     if k > n do
@@ -119,5 +122,32 @@ defmodule BDM.MinimalInformationLoss do
   end
 
   # Returns number of columns.
-  defp ncols(rows), do: rows |> hd() |> length()
+  defp validate_features!(rows) when is_list(rows) do
+    case rows do
+      [] ->
+        raise ArgumentError, "rows must contain at least one feature row"
+
+      [first_row | remaining_rows] when is_list(first_row) ->
+        width = length(first_row)
+
+        unless width > 0 do
+          raise ArgumentError, "rows must contain at least one feature column"
+        end
+
+        unless Enum.all?(remaining_rows, &(is_list(&1) and length(&1) == width)) do
+          raise ArgumentError, "rows must be a rectangular matrix"
+        end
+
+        :ok
+
+      _ ->
+        raise ArgumentError, "rows must be a rectangular matrix"
+    end
+  end
+
+  defp validate_features!(rows) do
+    raise ArgumentError, "rows must be a non-empty matrix, got: #{inspect(rows)}"
+  end
+
+  defp ncols([row | _]), do: length(row)
 end
